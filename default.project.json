@@ -1,0 +1,21 @@
+{
+  "name": "mining-empire",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "TycoonConfig": { "$path": "src/ReplicatedStorage/TycoonConfig.luau" }
+    },
+    "ServerScriptService": {
+      "Main": { "$path": "src/ServerScriptService/Main.server.luau" },
+      "PlotBuilder": { "$path": "src/ServerScriptService/PlotBuilder.luau" },
+      "Tycoon": { "$path": "src/ServerScriptService/Tycoon.luau" },
+      "WorldBuilder": { "$path": "src/ServerScriptService/WorldBuilder.luau" }
+    },
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "$className": "StarterPlayerScripts",
+        "HudClient": { "$path": "src/StarterPlayerScripts/HudClient.client.luau" }
+      }
+    }
+  }
+}

@@ -24,7 +24,7 @@ Config.Layout = {
 }
 
 Config.Belt = {
-	SpeedTiers = { 8, 14, 20, 30 },
+	SpeedTiers = { 10, 16, 24, 34 },
 	Colors = {
 		Color3.fromRGB(63, 65, 70),
 		Color3.fromRGB(70, 130, 220),
@@ -36,31 +36,31 @@ Config.Belt = {
 Config.ValueMultiplierTiers = { 1, 2, 4, 8 }
 
 Config.Droppers = {
-	Dirt = { Interval = 2.0, Value = 5, Side = "Left", DropZ = -19, Height = 7,
-		ItemColor = Color3.fromRGB(124, 92, 70), ItemMaterial = Enum.Material.Ground },
-	Stone = { Interval = 1.8, Value = 8, Side = "Right", DropZ = -15, Height = 7,
-		ItemColor = Color3.fromRGB(130, 132, 138), ItemMaterial = Enum.Material.Slate },
-	Coal = { Interval = 1.6, Value = 14, Side = "Left", DropZ = -11, Height = 8,
-		ItemColor = Color3.fromRGB(38, 38, 42), ItemMaterial = Enum.Material.Basalt },
-	Iron = { Interval = 1.4, Value = 22, Side = "Right", DropZ = -7, Height = 8,
-		ItemColor = Color3.fromRGB(192, 196, 204), ItemMaterial = Enum.Material.Metal },
-	Silver = { Interval = 1.2, Value = 35, Side = "Left", DropZ = -3, Height = 9,
-		ItemColor = Color3.fromRGB(222, 228, 238), ItemMaterial = Enum.Material.Foil },
-	Gold = { Interval = 1.0, Value = 55, Side = "Right", DropZ = 1, Height = 9,
-		ItemColor = Color3.fromRGB(255, 200, 50), ItemMaterial = Enum.Material.Metal },
-	Diamond = { Interval = 0.8, Value = 90, Side = "Left", DropZ = 5, Height = 10,
-		ItemColor = Color3.fromRGB(110, 230, 255), ItemMaterial = Enum.Material.Neon },
+	Dirt = { Interval = 1.8, Value = 5, Side = "Left", DropZ = -19, Height = 7, SizeScale = 0.9,
+		ItemColor = Color3.fromRGB(134, 98, 72), ItemMaterial = Enum.Material.Ground },
+	Stone = { Interval = 1.6, Value = 10, Side = "Right", DropZ = -15, Height = 7, SizeScale = 1.0,
+		ItemColor = Color3.fromRGB(150, 152, 160), ItemMaterial = Enum.Material.Slate },
+	Coal = { Interval = 1.4, Value = 18, Side = "Left", DropZ = -11, Height = 8, SizeScale = 1.05,
+		ItemColor = Color3.fromRGB(45, 45, 50), ItemMaterial = Enum.Material.Basalt, Light = true },
+	Iron = { Interval = 1.2, Value = 30, Side = "Right", DropZ = -7, Height = 8, SizeScale = 1.1,
+		ItemColor = Color3.fromRGB(210, 215, 225), ItemMaterial = Enum.Material.Metal },
+	Silver = { Interval = 1.0, Value = 50, Side = "Left", DropZ = -3, Height = 9, SizeScale = 1.15,
+		ItemColor = Color3.fromRGB(235, 242, 255), ItemMaterial = Enum.Material.Foil, Light = true },
+	Gold = { Interval = 0.85, Value = 85, Side = "Right", DropZ = 1, Height = 9, SizeScale = 1.2,
+		ItemColor = Color3.fromRGB(255, 210, 50), ItemMaterial = Enum.Material.Metal, Light = true, Trail = true },
+	Diamond = { Interval = 0.7, Value = 140, Side = "Left", DropZ = 5, Height = 10, SizeScale = 1.25,
+		ItemColor = Color3.fromRGB(100, 240, 255), ItemMaterial = Enum.Material.Neon, Light = true, Trail = true },
 }
 
 Config.Floor2Droppers = {
-	Ruby = { Interval = 1.6, Value = 150, Side = "Left", DropZ = -14, Height = 6,
-		ItemColor = Color3.fromRGB(255, 60, 90), ItemMaterial = Enum.Material.Neon, Machine = true },
-	Emerald = { Interval = 1.4, Value = 260, Side = "Right", DropZ = -9, Height = 6.5,
-		ItemColor = Color3.fromRGB(60, 255, 130), ItemMaterial = Enum.Material.Neon, Machine = true },
-	Uranium = { Interval = 1.2, Value = 450, Side = "Left", DropZ = -4, Height = 7,
-		ItemColor = Color3.fromRGB(150, 255, 60), ItemMaterial = Enum.Material.Neon, Machine = true, Light = true },
-	Voidstone = { Interval = 1.0, Value = 800, Side = "Right", DropZ = 1, Height = 7.5,
-		ItemColor = Color3.fromRGB(180, 90, 255), ItemMaterial = Enum.Material.Neon, Machine = true, Light = true, Trail = true },
+	Ruby = { Interval = 1.4, Value = 250, Side = "Left", DropZ = -14, Height = 6, SizeScale = 1.3,
+		ItemColor = Color3.fromRGB(255, 50, 80), ItemMaterial = Enum.Material.Neon, Machine = true, Light = true, Trail = true },
+	Emerald = { Interval = 1.2, Value = 450, Side = "Right", DropZ = -9, Height = 6.5, SizeScale = 1.35,
+		ItemColor = Color3.fromRGB(50, 255, 120), ItemMaterial = Enum.Material.Neon, Machine = true, Light = true, Trail = true },
+	Uranium = { Interval = 1.0, Value = 800, Side = "Left", DropZ = -4, Height = 7, SizeScale = 1.4,
+		ItemColor = Color3.fromRGB(160, 255, 40), ItemMaterial = Enum.Material.Neon, Machine = true, Light = true, Trail = true },
+	Voidstone = { Interval = 0.8, Value = 1500, Side = "Right", DropZ = 1, Height = 7.5, SizeScale = 1.5,
+		ItemColor = Color3.fromRGB(190, 80, 255), ItemMaterial = Enum.Material.Neon, Machine = true, Light = true, Trail = true },
 }
 
 Config.Weapons = {

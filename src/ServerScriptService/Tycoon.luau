@@ -21,6 +21,8 @@ function Tycoon.new(plotModel, claimHandler)
 	self.OnClaimRequested = claimHandler
 	self._connections = {}
 	self._lastShot = {}
+	self._comboCount = 0
+	self._lastSellTime = 0
 	self:_setup()
 	return self
 end
@@ -33,7 +35,7 @@ end
 function Tycoon:_setPadText(text)
 	local bb = self.Model.ClaimPad:FindFirstChildWhichIsA("BillboardGui")
 	if bb then
-		local label = bb:FindFirstChildWhichIsA("TextLabel")
+		local label = bb:FindFirstChildWhichIsA("TextLabel", true)
 		if label then
 			label.Text = text
 		end
@@ -64,6 +66,9 @@ function Tycoon:_setup()
 	table.insert(self._connections, model.Locked.LaserGroup.Beam.Touched:Connect(function(hit)
 		self:_onLaserTouch(hit)
 	end))
+	table.insert(self._connections, model.Locked.LaserGroup.BeamTop.Touched:Connect(function(hit)
+		self:_onLaserTouch(hit)
+	end))
 
 	table.insert(self._connections, model.CashHub.Touched:Connect(function(hit)
 		self:_onHubTouch(hit)
@@ -77,6 +82,13 @@ function Tycoon:_setup()
 					self:_tryPurchase(btn, player)
 				end
 			end))
+
+			local prompt = btn:FindFirstChildOfClass("ProximityPrompt")
+			if prompt then
+				table.insert(self._connections, prompt.Triggered:Connect(function(player)
+					self:_tryPurchase(btn, player)
+				end))
+			end
 		end
 	end
 
@@ -89,49 +101,80 @@ function Tycoon:_setup()
 end
 
 function Tycoon:_collect(hit, collectorPart)
-	if hit.Name ~= "CashItem" then
+	if hit.Name ~= "CashItem" or hit:GetAttribute("Collecting") then
 		return
 	end
+	hit:SetAttribute("Collecting", true)
+
 	local value = hit:GetAttribute("Value") or 0
-	hit:Destroy()
+	local color = hit.Color
+
+	TweenService:Create(hit, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		Size = Vector3.new(0.1, 0.1, 0.1),
+		CFrame = collectorPart.CFrame * CFrame.new(0, 0.5, 0)
+	}):Play()
+
+	task.delay(0.12, function()
+		if hit and hit.Parent then
+			hit:Destroy()
+		end
+	end)
+
 	if not self.Owner then
 		return
 	end
+
+	local now = os.clock()
+	if now - self._lastSellTime < 1.5 then
+		self._comboCount += 1
+	else
+		self._comboCount = 1
+	end
+	self._lastSellTime = now
+
 	local paid = math.floor(value * self.ItemMultiplier)
 	self.PendingCash += paid
 	self:_updateHub()
-	self:_sellPopup(collectorPart, paid)
+	self:_sellPopup(collectorPart, paid, color, self._comboCount)
+
 	local burst = collectorPart:FindFirstChild("SellBurst")
 	if burst then
-		burst:Emit(4)
+		burst:Emit(math.clamp(self._comboCount * 2, 4, 20))
 	end
 	local sound = collectorPart:FindFirstChild("SellSound")
 	if sound then
-		sound.PlaybackSpeed = 0.95 + math.random() * 0.2
+		sound.PlaybackSpeed = math.min(0.95 + (self._comboCount * 0.05), 1.6)
 		sound:Play()
 	end
 end
 
-function Tycoon:_sellPopup(collectorPart, amount)
+function Tycoon:_sellPopup(collectorPart, amount, color, combo)
 	local bb = Instance.new("BillboardGui")
-	bb.Size = UDim2.fromOffset(120, 40)
-	bb.StudsOffset = Vector3.new(math.random(-15, 15) / 10, 2, 0)
+	bb.Size = UDim2.fromOffset(140, 46)
+	bb.StudsOffset = Vector3.new(math.random(-18, 18) / 10, 2, 0)
 	bb.AlwaysOnTop = true
-	bb.MaxDistance = 80
+	bb.MaxDistance = 90
+
 	local tl = Instance.new("TextLabel")
 	tl.Size = UDim2.fromScale(1, 1)
 	tl.BackgroundTransparency = 1
 	tl.Font = Enum.Font.GothamBlack
 	tl.TextScaled = true
-	tl.TextColor3 = Color3.fromRGB(140, 255, 160)
-	tl.TextStrokeTransparency = 0.3
-	tl.Text = "+$" .. self:_formatNumber(amount)
+	tl.TextColor3 = (amount >= 500) and Color3.fromRGB(255, 220, 60) or (color or Color3.fromRGB(140, 255, 160))
+	tl.TextStrokeTransparency = 0.2
+
+	if combo and combo > 2 then
+		tl.Text = "+$" .. self:_formatNumber(amount) .. " x" .. combo .. "!"
+	else
+		tl.Text = "+$" .. self:_formatNumber(amount)
+	end
 	tl.Parent = bb
 	bb.Adornee = collectorPart
 	bb.Parent = collectorPart
-	TweenService:Create(tl, TweenInfo.new(0.8, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
-	TweenService:Create(bb, TweenInfo.new(0.8, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { StudsOffset = bb.StudsOffset + Vector3.new(0, 4, 0) }):Play()
-	Debris:AddItem(bb, 0.85)
+
+	TweenService:Create(tl, TweenInfo.new(0.85, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
+	TweenService:Create(bb, TweenInfo.new(0.85, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { StudsOffset = bb.StudsOffset + Vector3.new(0, 4.5, 0) }):Play()
+	Debris:AddItem(bb, 0.9)
 end
 
 function Tycoon:_formatNumber(n)
@@ -149,10 +192,24 @@ end
 function Tycoon:_updateHub()
 	local bb = self.Model.CashHub:FindFirstChildWhichIsA("BillboardGui")
 	if bb then
-		local label = bb:FindFirstChildWhichIsA("TextLabel")
+		local label = bb:FindFirstChildWhichIsA("TextLabel", true)
 		if label then
 			label.Text = "COLLECT\n$" .. self:_formatNumber(self.PendingCash)
 		end
+	end
+end
+
+function Tycoon:_spawnCoinShower(hubPart)
+	for i = 1, 12 do
+		local coin = Instance.new("Part")
+		coin.Shape = Enum.PartType.Cylinder
+		coin.Size = Vector3.new(0.2, 0.8, 0.8)
+		coin.Color = Color3.fromRGB(255, 215, 60)
+		coin.Material = Enum.Material.Neon
+		coin.CFrame = hubPart.CFrame * CFrame.new(math.random(-2, 2), 2, math.random(-2, 2)) * CFrame.Angles(0, 0, math.rad(90))
+		coin.Velocity = Vector3.new(math.random(-15, 15), math.random(20, 35), math.random(-15, 15))
+		coin.Parent = workspace
+		Debris:AddItem(coin, 1.5)
 	end
 end
 
@@ -172,10 +229,12 @@ function Tycoon:_onHubTouch(hit)
 	self.PendingCash = 0
 	self:_updateHub()
 	cash.Value += amount
-	self:_sellPopup(self.Model.CashHub, amount)
+	self:_sellPopup(self.Model.CashHub, amount, Color3.fromRGB(255, 220, 80))
+	self:_spawnCoinShower(self.Model.CashHub)
+
 	local burst = self.Model.CashHub:FindFirstChild("CashBurst")
 	if burst then
-		burst:Emit(40)
+		burst:Emit(50)
 	end
 	local sound = self.Model.CashHub:FindFirstChild("CashSound")
 	if sound then
@@ -198,10 +257,11 @@ function Tycoon:_onLaserTouch(hit)
 	end
 	humanoid:SetAttribute("KillerUserId", self.Owner and self.Owner.UserId or 0)
 	humanoid.Health = 0
+
 	local beam = self.Model.Locked.LaserGroup.Beam
 	local burst = beam:FindFirstChild("KillBurst")
 	if burst then
-		burst:Emit(25)
+		burst:Emit(30)
 	end
 	local sound = beam:FindFirstChild("KillSound")
 	if sound then
@@ -245,11 +305,14 @@ function Tycoon:_tryPurchase(btn, player)
 	if req ~= "" and not self.Purchased[req] then
 		return
 	end
+
 	local cash = self:_getCash(player)
 	local cost = btn:GetAttribute("Cost") or 0
 	if not cash or cash.Value < cost then
+		self:_rejectPurchase(btn)
 		return
 	end
+
 	cash.Value -= cost
 	self.Purchased[id] = true
 	self:_applyPurchase(btn:GetAttribute("Kind"), btn:GetAttribute("Target"))
@@ -258,14 +321,35 @@ function Tycoon:_tryPurchase(btn, player)
 	self:_refreshButtons()
 end
 
+function Tycoon:_rejectPurchase(btn)
+	local sound = btn:FindFirstChild("BuySound")
+	if sound then
+		sound.PlaybackSpeed = 0.65
+		sound:Play()
+	end
+	local bb = btn:FindFirstChildWhichIsA("BillboardGui")
+	if bb then
+		local frame = bb:FindFirstChildWhichIsA("Frame")
+		if frame then
+			local stroke = frame:FindFirstChildWhichIsA("UIStroke")
+			if stroke then
+				stroke.Color = Color3.fromRGB(255, 60, 60)
+				task.delay(0.3, function()
+					stroke.Color = Color3.fromRGB(255, 255, 255)
+				end)
+			end
+		end
+	end
+end
+
 function Tycoon:_juice(btn)
 	local burst = btn:FindFirstChild("BuyBurst")
 	if burst then
-		burst:Emit(50)
+		burst:Emit(60)
 	end
 	local sound = btn:FindFirstChild("BuySound")
 	if sound then
-		sound.PlaybackSpeed = 0.9 + math.random() * 0.4
+		sound.PlaybackSpeed = 1.0 + math.random() * 0.3
 		sound:Play()
 	end
 end
@@ -320,16 +404,35 @@ end
 function Tycoon:_spawnItem(id, cfg)
 	local dropperModel = self.Model.Locked:FindFirstChild("Dropper_" .. id)
 	local sp = dropperModel and dropperModel:FindFirstChild("SpawnPoint", true)
+	local nozzle = dropperModel and dropperModel:FindFirstChild("Nozzle", true)
 	if not sp then
 		return
 	end
+
+	if nozzle then
+		local origSize = Vector3.new(1.8, 1.2, 1.8)
+		TweenService:Create(nozzle, TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = Vector3.new(2.2, 0.7, 2.2) }):Play()
+		task.delay(0.09, function()
+			if nozzle and nozzle.Parent then
+				TweenService:Create(nozzle, TweenInfo.new(0.12, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out), { Size = origSize }):Play()
+			end
+		end)
+	end
+
+	local scale = cfg.SizeScale or 1.0
 	local item = Instance.new("Part")
 	item.Name = "CashItem"
-	item.Size = Vector3.new(1, 1, 1)
+	item.Size = Vector3.new(scale, scale, scale)
 	item.Material = cfg.ItemMaterial
 	item.Color = cfg.ItemColor
 	item:SetAttribute("Value", cfg.Value)
-	item.CFrame = sp.CFrame * CFrame.new(math.random() * 0.4 - 0.2, 0, math.random() * 0.4 - 0.2)
+	item.CFrame = sp.CFrame * CFrame.new(math.random() * 0.4 - 0.2, 0, math.random() * 0.4 - 0.2) * CFrame.Angles(math.rad(45), math.rad(45), 0)
+
+	local spin = Instance.new("BodyAngularVelocity")
+	spin.AngularVelocity = Vector3.new(math.random(-3, 3), math.random(2, 6), math.random(-3, 3))
+	spin.MaxTorque = Vector3.new(100, 100, 100)
+	spin.Parent = item
+
 	if cfg.Trail then
 		local pe = Instance.new("ParticleEmitter")
 		pe.Texture = "rbxasset://textures/particles/sparkles_main.dds"
@@ -337,16 +440,18 @@ function Tycoon:_spawnItem(id, cfg)
 		pe.LightEmission = 1
 		pe.Size = NumberSequence.new(0.5)
 		pe.Lifetime = NumberRange.new(0.4)
-		pe.Rate = 15
+		pe.Rate = 18
 		pe.Parent = item
 	end
+
 	if cfg.Light then
 		local pl = Instance.new("PointLight")
 		pl.Color = cfg.ItemColor
-		pl.Range = 8
-		pl.Brightness = 1.5
+		pl.Range = 9
+		pl.Brightness = 1.6
 		pl.Parent = item
 	end
+
 	item.Parent = self.Model
 	Debris:AddItem(item, 30)
 end
@@ -519,6 +624,8 @@ function Tycoon:Reset()
 	self.Purchased = {}
 	self.ItemMultiplier = Config.ValueMultiplierTiers[1]
 	self.PendingCash = 0
+	self._comboCount = 0
+	self._lastSellTime = 0
 	self:_applyBeltTier(1)
 	local green = Color3.fromRGB(90, 230, 110)
 	self.Model.Collector.Color = green

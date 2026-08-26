@@ -68,31 +68,50 @@ local function makeEmitter(parent, colorSeq, size, speed, lifetime, name)
 	return pe
 end
 
-local function attachSound(part, name, pitch)
+local function attachSound(part, name, soundId, pitch)
 	local s = Instance.new("Sound")
 	s.Name = name
-	s.SoundId = "rbxasset://sounds/electronicpingshort.wav"
+	s.SoundId = soundId or "rbxasset://sounds/electronicpingshort.wav"
 	s.PlaybackSpeed = pitch or 1
 	s.Volume = 0.6
 	s.Parent = part
 	return s
 end
 
-local function attachBillboard(part, text, widthPx, heightPx, offsetY)
+local function attachBillboard(part, text, widthPx, heightPx, offsetY, bgColor)
 	local bb = Instance.new("BillboardGui")
 	bb.Size = UDim2.fromOffset(widthPx, heightPx)
 	bb.StudsOffset = Vector3.new(0, offsetY, 0)
 	bb.AlwaysOnTop = true
 	bb.MaxDistance = 120
+
+	local frame = Instance.new("Frame")
+	frame.Size = UDim2.fromScale(1, 1)
+	frame.BackgroundColor3 = bgColor or Color3.fromRGB(18, 20, 26)
+	frame.BackgroundTransparency = 0.25
+	frame.BorderSizePixel = 0
+	frame.Parent = bb
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 10)
+	corner.Parent = frame
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = Color3.fromRGB(255, 255, 255)
+	stroke.Transparency = 0.6
+	stroke.Thickness = 2
+	stroke.Parent = frame
+
 	local label = Instance.new("TextLabel")
 	label.Size = UDim2.fromScale(1, 1)
 	label.BackgroundTransparency = 1
-	label.Font = Enum.Font.GothamBold
+	label.Font = Enum.Font.GothamBlack
 	label.TextScaled = true
 	label.TextColor3 = Color3.new(1, 1, 1)
-	label.TextStrokeTransparency = 0.4
+	label.TextStrokeTransparency = 0.5
 	label.Text = text
-	label.Parent = bb
+	label.Parent = frame
+
 	bb.Adornee = part
 	bb.Parent = part
 	return bb
@@ -120,28 +139,43 @@ local function buildDropper(id, cfg, accent, parent, base, baseY)
 		makePart({
 			Name = "Tank",
 			Shape = Enum.PartType.Cylinder,
-			Size = Vector3.new(2.5, 2, 2),
-			CFrame = base * CFrame.new(sideX + (cfg.Side == "Left" and 2.2 or -2.2), baseY + h * 0.35, cfg.DropZ) * CFrame.Angles(0, 0, math.rad(90)),
+			Size = Vector3.new(3, 2.4, 2.4),
+			CFrame = base * CFrame.new(sideX + (cfg.Side == "Left" and 2.4 or -2.4), baseY + h * 0.35, cfg.DropZ) * CFrame.Angles(0, 0, math.rad(90)),
 			Color = Color3.fromRGB(130, 110, 180),
 			Material = Enum.Material.Metal,
+		}, m)
+
+		makePart({
+			Name = "Pipe",
+			Shape = Enum.PartType.Cylinder,
+			Size = Vector3.new(h * 0.6, 0.6, 0.6),
+			CFrame = base * CFrame.new(sideX + (cfg.Side == "Left" and 1.2 or -1.2), baseY + h * 0.6, cfg.DropZ) * CFrame.Angles(0, 0, math.rad(90)),
+			Color = cfg.ItemColor,
+			Material = Enum.Material.Neon,
 		}, m)
 	end
 
 	makePart({
 		Name = "Arm",
-		Size = Vector3.new(math.abs(sideX) + 1, 1, 1.5),
+		Size = Vector3.new(math.abs(sideX) + 1, 1.2, 1.6),
 		CFrame = base * CFrame.new(sideX / 2, baseY + h - 0.5, cfg.DropZ),
 		Color = machine and Color3.fromRGB(95, 85, 125) or Color3.fromRGB(130, 135, 145),
 		Material = Enum.Material.Metal,
 	}, m)
 
-	makePart({
+	local nozzle = makePart({
 		Name = "Nozzle",
-		Size = Vector3.new(1.6, 1, 1.6),
-		CFrame = base * CFrame.new(0, baseY + h - 1, cfg.DropZ),
-		Color = accent,
+		Size = Vector3.new(1.8, 1.2, 1.8),
+		CFrame = base * CFrame.new(0, baseY + h - 1.1, cfg.DropZ),
+		Color = cfg.ItemColor,
 		Material = Enum.Material.Neon,
 	}, m)
+
+	local nozzleLight = Instance.new("PointLight")
+	nozzleLight.Color = cfg.ItemColor
+	nozzleLight.Range = 10
+	nozzleLight.Brightness = 1.5
+	nozzleLight.Parent = nozzle
 
 	makePart({
 		Name = "SpawnPoint",
@@ -192,7 +226,8 @@ end
 local function buildLaser(base, parent)
 	local m = Instance.new("Model")
 	m.Name = "LaserGroup"
-	local beam = makePart({
+
+	local beamCenter = makePart({
 		Name = "Beam",
 		Size = Vector3.new(8, 0.4, 0.4),
 		CFrame = base * CFrame.new(0, 2.5, -FZ / 2),
@@ -200,15 +235,27 @@ local function buildLaser(base, parent)
 		Material = Enum.Material.Neon,
 		CanCollide = false,
 	}, m)
+
+	local beamTop = makePart({
+		Name = "BeamTop",
+		Size = Vector3.new(8, 0.4, 0.4),
+		CFrame = base * CFrame.new(0, 5.0, -FZ / 2),
+		Color = Color3.fromRGB(255, 40, 40),
+		Material = Enum.Material.Neon,
+		CanCollide = false,
+	}, m)
+
 	local light = Instance.new("PointLight")
 	light.Color = Color3.fromRGB(255, 60, 60)
-	light.Range = 12
-	light.Brightness = 2
-	light.Parent = beam
-	makeEmitter(beam, ColorSequence.new(Color3.fromRGB(255, 60, 60)), 0.6, 10, 0.5, "KillBurst")
-	attachSound(beam, "KillSound", 0.5)
-	makePart({ Name = "EmitL", Size = Vector3.new(0.8, 1.2, 0.8), CFrame = base * CFrame.new(-4.4, 2.5, -FZ / 2), Color = Color3.fromRGB(255, 40, 40), Material = Enum.Material.Neon }, m)
-	makePart({ Name = "EmitR", Size = Vector3.new(0.8, 1.2, 0.8), CFrame = base * CFrame.new(4.4, 2.5, -FZ / 2), Color = Color3.fromRGB(255, 40, 40), Material = Enum.Material.Neon }, m)
+	light.Range = 14
+	light.Brightness = 2.5
+	light.Parent = beamCenter
+
+	makeEmitter(beamCenter, ColorSequence.new(Color3.fromRGB(255, 60, 60)), 0.6, 12, 0.5, "KillBurst")
+	attachSound(beamCenter, "KillSound", "rbxasset://sounds/electronicpingshort.wav", 0.5)
+
+	makePart({ Name = "EmitL", Size = Vector3.new(0.8, 6.0, 0.8), CFrame = base * CFrame.new(-4.4, 3.5, -FZ / 2), Color = Color3.fromRGB(255, 40, 40), Material = Enum.Material.Neon }, m)
+	makePart({ Name = "EmitR", Size = Vector3.new(0.8, 6.0, 0.8), CFrame = base * CFrame.new(4.4, 3.5, -FZ / 2), Color = Color3.fromRGB(255, 40, 40), Material = Enum.Material.Neon }, m)
 	m.Parent = parent
 end
 
@@ -245,9 +292,9 @@ local function buildStairsAndFloor2(accent, base, beltDir, parent)
 	end
 
 	local collector2 = makePart({ Name = "Collector2", Size = Vector3.new(6, 1, 4), CFrame = base * CFrame.new(0, 13.9, 15), Color = Color3.fromRGB(90, 230, 110), Material = Enum.Material.Neon }, m)
-	attachBillboard(collector2, "SELL ORE", 120, 40, 2)
-	makeEmitter(collector2, ColorSequence.new(Color3.fromRGB(120, 255, 150)), 0.6, 8, 0.5, "SellBurst")
-	attachSound(collector2, "SellSound", 1.1)
+	attachBillboard(collector2, "SELL ORE", 140, 48, 2, Color3.fromRGB(20, 40, 25))
+	makeEmitter(collector2, ColorSequence.new(Color3.fromRGB(120, 255, 150)), 0.6, 10, 0.5, "SellBurst")
+	attachSound(collector2, "SellSound", "rbxasset://sounds/electronicpingshort.wav", 1.1)
 
 	m.Parent = parent
 	return m
@@ -258,7 +305,7 @@ local function buildSign(name, text, cf, parent)
 	m.Name = name
 	local board = makePart({
 		Name = "SignBoard",
-		Size = Vector3.new(26, 6, 1.5),
+		Size = Vector3.new(28, 6.5, 1.5),
 		CFrame = cf,
 		Color = Color3.fromRGB(20, 20, 25),
 		Material = Enum.Material.SmoothPlastic,
@@ -283,27 +330,40 @@ local function buildButtons(folder, defs, cols, rows, yBase, accent, base)
 	for _, def in ipairs(defs) do
 		local col = (def.Slot - 1) % #cols
 		local row = math.floor((def.Slot - 1) / #cols)
+
+		local btnPos = base * CFrame.new(cols[col + 1], yBase, rows[row + 1])
 		local btn = makePart({
 			Name = "Button_" .. def.Id,
 			Shape = Enum.PartType.Cylinder,
 			Size = Vector3.new(0.4, 5, 5),
-			CFrame = base * CFrame.new(cols[col + 1], yBase, rows[row + 1]) * CFrame.Angles(0, 0, math.rad(90)),
+			CFrame = btnPos * CFrame.Angles(0, 0, math.rad(90)),
 			Color = accent,
 			Material = Enum.Material.Neon,
 		}, folder)
+
 		btn:SetAttribute("Id", def.Id)
 		btn:SetAttribute("Cost", def.Cost)
 		btn:SetAttribute("Kind", def.Kind)
 		btn:SetAttribute("Target", def.Target or "")
 		btn:SetAttribute("Requires", def.Requires or "")
-		attachBillboard(btn, def.Name .. "\n$" .. comma(def.Cost), 190, 70, 3)
-		makeEmitter(btn, RAINBOW, 0.8, 14, 0.9, "BuyBurst")
-		attachSound(btn, "BuySound", 1.1)
+
+		attachBillboard(btn, def.Name .. "\n$" .. comma(def.Cost), 200, 76, 3.2, Color3.fromRGB(22, 26, 36))
+		makeEmitter(btn, RAINBOW, 0.9, 16, 0.9, "BuyBurst")
+		attachSound(btn, "BuySound", "rbxasset://sounds/electronicpingshort.wav", 1.1)
+
 		local light = Instance.new("PointLight")
 		light.Color = accent
-		light.Range = 8
-		light.Brightness = 1
+		light.Range = 9
+		light.Brightness = 1.2
 		light.Parent = btn
+
+		local prompt = Instance.new("ProximityPrompt")
+		prompt.ObjectText = def.Name
+		prompt.ActionText = "Buy ($" .. comma(def.Cost) .. ")"
+		prompt.HoldDuration = 0
+		prompt.MaxActivationDistance = 9
+		prompt.RequiresLineOfSight = false
+		prompt.Parent = btn
 	end
 end
 
@@ -355,6 +415,8 @@ function PlotBuilder.SetVisible(root, visible)
 			inst.CanCollide = visible and inst:GetAttribute("OrigCC") or false
 		elseif inst:IsA("BillboardGui") or inst:IsA("SurfaceGui") then
 			inst.Enabled = visible
+		elseif inst:IsA("ProximityPrompt") then
+			inst.Enabled = visible
 		end
 	end
 	apply(root)
@@ -385,7 +447,7 @@ function PlotBuilder.Build(index, origin, yaw)
 	makePart({ Name = "Porch", Size = Vector3.new(26, 2, 6), CFrame = base * CFrame.new(0, -1, -FZ / 2 - 3), Color = Color3.fromRGB(45, 47, 53), Material = Enum.Material.Slate }, model)
 
 	local claimPad = makePart({ Name = "ClaimPad", Size = Vector3.new(12, 0.4, 4), CFrame = base * CFrame.new(-6.5, 0.2, -FZ / 2 - 3), Color = accent, Material = Enum.Material.Neon }, model)
-	attachBillboard(claimPad, "CLAIM PLOT", 220, 50, 4)
+	attachBillboard(claimPad, "CLAIM PLOT", 220, 52, 4, Color3.fromRGB(15, 30, 22))
 	TweenService:Create(claimPad, TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), { Transparency = 0.35 }):Play()
 
 	local hub = makePart({
@@ -396,18 +458,21 @@ function PlotBuilder.Build(index, origin, yaw)
 		Color = Color3.fromRGB(255, 200, 50),
 		Material = Enum.Material.Neon,
 	}, model)
-	attachBillboard(hub, "COLLECT\n$0", 160, 70, 5)
-	makeEmitter(hub, ColorSequence.new(Color3.fromRGB(255, 220, 80)), 0.8, 12, 0.9, "CashBurst")
+	attachBillboard(hub, "COLLECT\n$0", 180, 76, 5, Color3.fromRGB(40, 32, 10))
+	makeEmitter(hub, ColorSequence.new(Color3.fromRGB(255, 220, 80)), 0.9, 14, 0.9, "CashBurst")
+
 	local cashSound = Instance.new("Sound")
 	cashSound.Name = "CashSound"
 	cashSound.SoundId = "rbxassetid://101396758527961"
 	cashSound.Volume = 1
 	cashSound.Parent = hub
+
 	local hubLight = Instance.new("PointLight")
 	hubLight.Color = Color3.fromRGB(255, 210, 80)
-	hubLight.Range = 10
-	hubLight.Brightness = 1.2
+	hubLight.Range = 12
+	hubLight.Brightness = 1.5
 	hubLight.Parent = hub
+
 	makePart({ Name = "Vault", Size = Vector3.new(4, 3.5, 3), CFrame = base * CFrame.new(6.5, 1.75, -FZ / 2 - 4.75), Color = Color3.fromRGB(40, 42, 50), Material = Enum.Material.Metal }, model)
 
 	local beltDir = base:VectorToWorldSpace(Vector3.new(0, 0, 1))
@@ -418,12 +483,13 @@ function PlotBuilder.Build(index, origin, yaw)
 
 	for _, sx in ipairs({ -2.25, 2.25 }) do
 		makePart({ Name = "Rail", Size = Vector3.new(0.5, 1.4, L.BeltLength), CFrame = base * CFrame.new(sx, 1.7, L.BeltCenterZ), Color = Color3.fromRGB(220, 225, 235), Material = Enum.Material.Glass, Transparency = 0.6 }, model)
+		makePart({ Name = "RailTrim", Size = Vector3.new(0.2, 0.3, L.BeltLength), CFrame = base * CFrame.new(sx, 2.4, L.BeltCenterZ), Color = accent, Material = Enum.Material.Neon }, model)
 	end
 
 	local collector = makePart({ Name = "Collector", Size = Vector3.new(6, 1, 4), CFrame = base * CFrame.new(0, 0.5, L.BeltCenterZ + L.BeltLength / 2 + 2), Color = Color3.fromRGB(90, 230, 110), Material = Enum.Material.Neon }, model)
-	attachBillboard(collector, "SELL ORE", 120, 40, 2)
-	makeEmitter(collector, ColorSequence.new(Color3.fromRGB(120, 255, 150)), 0.6, 8, 0.5, "SellBurst")
-	attachSound(collector, "SellSound", 1.1)
+	attachBillboard(collector, "SELL ORE", 140, 48, 2, Color3.fromRGB(20, 40, 25))
+	makeEmitter(collector, ColorSequence.new(Color3.fromRGB(120, 255, 150)), 0.6, 10, 0.5, "SellBurst")
+	attachSound(collector, "SellSound", "rbxasset://sounds/electronicpingshort.wav", 1.1)
 
 	local locked = Instance.new("Folder")
 	locked.Name = "Locked"

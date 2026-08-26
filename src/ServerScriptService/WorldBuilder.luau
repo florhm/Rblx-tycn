@@ -94,16 +94,39 @@ local function buildBush(parent, pos)
 	}, parent)
 end
 
+local function buildCrystalCluster(parent, pos, color)
+	local m = Instance.new("Model")
+	m.Name = "CrystalCluster"
+	for i = 1, 3 do
+		local h = rng:NextNumber(2.5, 4.5)
+		local w = rng:NextNumber(0.8, 1.4)
+		local crystal = makePart({
+			Name = "Crystal",
+			Size = Vector3.new(w, h, w),
+			CFrame = CFrame.new(pos + Vector3.new(rng:NextNumber(-0.8, 0.8), h / 2, rng:NextNumber(-0.8, 0.8)))
+				* CFrame.Angles(math.rad(rng:NextNumber(-15, 15)), math.rad(rng:NextNumber(0, 360)), math.rad(rng:NextNumber(-15, 15))),
+			Color = color or Color3.fromRGB(0, 230, 255),
+			Material = Enum.Material.Neon,
+		}, m)
+		local light = Instance.new("PointLight")
+		light.Color = color or Color3.fromRGB(0, 230, 255)
+		light.Range = 8
+		light.Brightness = 1.2
+		light.Parent = crystal
+	end
+	m.Parent = parent
+end
+
 local function buildLamp(parent, pos)
 	local m = Instance.new("Model")
 	m.Name = "Lamp"
 	makePart({ Name = "Pole", Size = Vector3.new(0.6, 7, 0.6), CFrame = CFrame.new(pos + Vector3.new(0, 3.5, 0)), Color = Color3.fromRGB(35, 36, 42), Material = Enum.Material.Metal }, m)
 	makePart({ Name = "Base", Size = Vector3.new(1.4, 0.4, 1.4), CFrame = CFrame.new(pos + Vector3.new(0, 0.2, 0)), Color = Color3.fromRGB(35, 36, 42), Material = Enum.Material.Metal }, m)
-	local bulb = makePart({ Name = "Bulb", Shape = Enum.PartType.Ball, Size = Vector3.new(1.3, 1.3, 1.3), CFrame = CFrame.new(pos + Vector3.new(0, 7.4, 0)), Color = Color3.fromRGB(255, 230, 170), Material = Enum.Material.Neon }, m)
+	local bulb = makePart({ Name = "Bulb", Shape = Enum.PartType.Ball, Size = Vector3.new(1.4, 1.4, 1.4), CFrame = CFrame.new(pos + Vector3.new(0, 7.4, 0)), Color = Color3.fromRGB(255, 220, 140), Material = Enum.Material.Neon }, m)
 	local light = Instance.new("PointLight")
-	light.Color = Color3.fromRGB(255, 225, 180)
-	light.Range = 18
-	light.Brightness = 1.2
+	light.Color = Color3.fromRGB(255, 215, 150)
+	light.Range = 22
+	light.Brightness = 1.5
 	light.Parent = bulb
 	m.Parent = parent
 end
@@ -135,7 +158,7 @@ function WorldBuilder.Build()
 			tex:Destroy()
 		end
 		baseplate.Material = Enum.Material.Basalt
-		baseplate.Color = Color3.fromRGB(38, 38, 42)
+		baseplate.Color = Color3.fromRGB(34, 35, 40)
 	end
 
 	local spawnLoc = workspace:FindFirstChild("SpawnLocation")
@@ -146,20 +169,25 @@ function WorldBuilder.Build()
 		end
 		spawnLoc.CFrame = CFrame.new(0, 0.9, 0)
 		spawnLoc.Material = Enum.Material.Basalt
-		spawnLoc.Color = Color3.fromRGB(52, 52, 60)
+		spawnLoc.Color = Color3.fromRGB(48, 50, 58)
 	end
 
-	makePart({ Name = "Plaza", Size = Vector3.new(24, 0.4, 24), CFrame = CFrame.new(0, 0.2, 0), Color = Color3.fromRGB(70, 70, 78), Material = Enum.Material.Cobblestone }, decor)
+	makePart({ Name = "Plaza", Size = Vector3.new(28, 0.4, 28), CFrame = CFrame.new(0, 0.2, 0), Color = Color3.fromRGB(72, 74, 84), Material = Enum.Material.Cobblestone }, decor)
+	makePart({ Name = "PlazaRing", Size = Vector3.new(30, 0.35, 30), CFrame = CFrame.new(0, 0.18, 0), Color = Color3.fromRGB(0, 255, 140), Material = Enum.Material.Neon }, decor)
 
 	for _, cx in ipairs({ -150, 0, 150 }) do
 		for _, side in ipairs({ -1, 1 }) do
 			makePart({ Name = "Path", Size = Vector3.new(10, 0.3, 60), CFrame = CFrame.new(cx, 0.15, side * 42), Color = Color3.fromRGB(80, 78, 86), Material = Enum.Material.Cobblestone }, decor)
+			makePart({ Name = "PathTrimL", Size = Vector3.new(0.4, 0.35, 60), CFrame = CFrame.new(cx - 5.1, 0.17, side * 42), Color = Color3.fromRGB(0, 200, 255), Material = Enum.Material.Neon }, decor)
+			makePart({ Name = "PathTrimR", Size = Vector3.new(0.4, 0.35, 60), CFrame = CFrame.new(cx + 5.1, 0.17, side * 42), Color = Color3.fromRGB(0, 200, 255), Material = Enum.Material.Neon }, decor)
 		end
 	end
 
-	makePart({ Name = "SignPost", Size = Vector3.new(0.7, 8, 0.7), CFrame = CFrame.new(-4, 4, -17), Color = Color3.fromRGB(86, 62, 44), Material = Enum.Material.WoodPlanks }, decor)
-	makePart({ Name = "SignPost", Size = Vector3.new(0.7, 8, 0.7), CFrame = CFrame.new(4, 4, -17), Color = Color3.fromRGB(86, 62, 44), Material = Enum.Material.WoodPlanks }, decor)
-	local signBoard = makePart({ Name = "SignBoard", Size = Vector3.new(14, 4, 0.8), CFrame = CFrame.new(0, 7, -17), Color = Color3.fromRGB(110, 80, 56), Material = Enum.Material.WoodPlanks }, decor)
+	local signBoard = makePart({ Name = "SignBoard", Size = Vector3.new(16, 4.5, 0.8), CFrame = CFrame.new(0, 7.5, -17), Color = Color3.fromRGB(30, 32, 40), Material = Enum.Material.Metal }, decor)
+	makePart({ Name = "SignBoardBorder", Size = Vector3.new(16.4, 4.9, 0.6), CFrame = CFrame.new(0, 7.5, -17), Color = Color3.fromRGB(0, 255, 140), Material = Enum.Material.Neon }, decor)
+	makePart({ Name = "SignPostL", Size = Vector3.new(0.8, 8, 0.8), CFrame = CFrame.new(-6, 4, -17), Color = Color3.fromRGB(50, 52, 60), Material = Enum.Material.Metal }, decor)
+	makePart({ Name = "SignPostR", Size = Vector3.new(0.8, 8, 0.8), CFrame = CFrame.new(6, 4, -17), Color = Color3.fromRGB(50, 52, 60), Material = Enum.Material.Metal }, decor)
+
 	local sg = Instance.new("SurfaceGui")
 	sg.Face = Enum.NormalId.Back
 	sg.Parent = signBoard
@@ -168,8 +196,8 @@ function WorldBuilder.Build()
 	signLabel.BackgroundTransparency = 1
 	signLabel.Font = Enum.Font.GothamBlack
 	signLabel.TextScaled = true
-	signLabel.TextColor3 = Color3.fromRGB(255, 220, 120)
-	signLabel.TextStrokeTransparency = 0.6
+	signLabel.TextColor3 = Color3.fromRGB(255, 220, 80)
+	signLabel.TextStrokeTransparency = 0.3
 	signLabel.Text = "MINING EMPIRE"
 	signLabel.Parent = sg
 
@@ -180,26 +208,25 @@ function WorldBuilder.Build()
 		end
 	end
 
+	for i, color in ipairs({ Color3.fromRGB(0, 230, 255), Color3.fromRGB(255, 90, 200), Color3.fromRGB(0, 255, 140), Color3.fromRGB(255, 180, 40) }) do
+		local angle = (i / 4) * math.pi * 2
+		buildCrystalCluster(decor, Vector3.new(math.cos(angle) * 16, 0.2, math.sin(angle) * 16), color)
+	end
+
 	for i = 1, 14 do
 		local x, z = rng:NextNumber(-220, 220), rng:NextNumber(-55, 55)
 		if not isBlocked(x, z) then
 			buildTree(decor, Vector3.new(x, 0, z))
 		end
 	end
-	for i = 1, 12 do
+	for i = 1, 14 do
 		buildTree(decor, Vector3.new(rng:NextNumber(-300, 300), 0, rng:NextNumber(-280, -160)))
 	end
-	for i = 1, 12 do
+	for i = 1, 14 do
 		buildTree(decor, Vector3.new(rng:NextNumber(-300, 300), 0, rng:NextNumber(160, 280)))
 	end
-	for i = 1, 6 do
-		buildTree(decor, Vector3.new(rng:NextNumber(210, 300), 0, rng:NextNumber(-160, 160)))
-	end
-	for i = 1, 6 do
-		buildTree(decor, Vector3.new(rng:NextNumber(-300, -210), 0, rng:NextNumber(-160, 160)))
-	end
 
-	for i = 1, 20 do
+	for i = 1, 24 do
 		local x, z = rng:NextNumber(-280, 280), rng:NextNumber(-150, 150)
 		if not isBlocked(x, z) then
 			if rng:NextNumber() < 0.5 then
@@ -250,13 +277,33 @@ function WorldBuilder.Build()
 		end
 	end
 
-	local atmo = Lighting:FindFirstChildOfClass("Atmosphere")
-	if atmo then
-		atmo.Density = 0.3
-		atmo.Haze = 1.5
-	end
+	local bloom = Lighting:FindFirstChildOfClass("BloomEffect") or Instance.new("BloomEffect")
+	bloom.Intensity = 1.2
+	bloom.Size = 24
+	bloom.Threshold = 0.8
+	bloom.Parent = Lighting
+
+	local cc = Lighting:FindFirstChildOfClass("ColorCorrectionEffect") or Instance.new("ColorCorrectionEffect")
+	cc.Brightness = 0.02
+	cc.Contrast = 0.1
+	cc.Saturation = 0.2
+	cc.TintColor = Color3.fromRGB(255, 248, 240)
+	cc.Parent = Lighting
+
+	local sunRays = Lighting:FindFirstChildOfClass("SunRaysEffect") or Instance.new("SunRaysEffect")
+	sunRays.Intensity = 0.15
+	sunRays.Spread = 0.8
+	sunRays.Parent = Lighting
+
+	local atmo = Lighting:FindFirstChildOfClass("Atmosphere") or Instance.new("Atmosphere")
+	atmo.Density = 0.25
+	atmo.Haze = 1.2
+	atmo.Color = Color3.fromRGB(180, 190, 210)
+	atmo.Decay = Color3.fromRGB(90, 100, 120)
+	atmo.Parent = Lighting
+
 	Lighting.ClockTime = 14.5
-	Lighting.Brightness = 3
+	Lighting.Brightness = 2.8
 
 	return decor
 end

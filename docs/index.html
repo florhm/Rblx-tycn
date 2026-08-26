@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mining Empire Tycoon - Roblox Game Showcase</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0b0d12;
+      --bg-card: #131722;
+      --bg-card-hover: #1c2233;
+      --accent-green: #00ff8c;
+      --accent-cyan: #00e1ff;
+      --accent-purple: #a855f7;
+      --accent-gold: #ffd700;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* Header & Hero */
+    header {
+      background: radial-gradient(circle at top center, rgba(0, 255, 140, 0.15), transparent 70%),
+                  linear-gradient(to bottom, #07090e, var(--bg-dark));
+      padding: 80px 20px 60px;
+      text-align: center;
+      border-bottom: 1px solid var(--border-color);
+      position: relative;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 16px;
+      background: rgba(0, 255, 140, 0.1);
+      border: 1px solid var(--accent-green);
+      color: var(--accent-green);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.85rem;
+      border-radius: 50px;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 3.2rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, #ffffff 30%, var(--accent-green) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 15px;
+      letter-spacing: -1px;
+    }
+
+    .hero-subtitle {
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      max-width: 700px;
+      margin: 0 auto 35px;
+    }
+
+    .cta-buttons {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 14px 28px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: var(--accent-green);
+      color: #050b07;
+      box-shadow: 0 0 20px rgba(0, 255, 140, 0.4);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 30px rgba(0, 255, 140, 0.7);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
+    }
+
+    /* Container */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 60px 20px;
+    }
+
+    .section-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 2rem;
+      margin-bottom: 40px;
+      text-align: center;
+      position: relative;
+    }
+
+    .section-title::after {
+      content: '';
+      display: block;
+      width: 60px;
+      height: 4px;
+      background: var(--accent-green);
+      margin: 12px auto 0;
+      border-radius: 2px;
+    }
+
+    /* Features Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 25px;
+      margin-bottom: 70px;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 30px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(0, 255, 140, 0.4);
+      transform: translateY(-50px);
+      transform: translateY(-5px);
+    }
+
+    .card-icon {
+      font-size: 2.2rem;
+      margin-bottom: 15px;
+      display: inline-block;
+    }
+
+    .card h3 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.25rem;
+      margin-bottom: 12px;
+      color: #ffffff;
+    }
+
+    .card p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    /* Architecture Table / Tree */
+    .arch-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 30px;
+      margin-bottom: 70px;
+    }
+
+    .code-tree {
+      font-family: 'Courier New', Courier, monospace;
+      background: #080a0e;
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      color: #4ade80;
+      line-height: 1.5;
+      overflow-x: auto;
+    }
+
+    /* Stats Banner */
+    .stats-banner {
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+      gap: 20px;
+      background: linear-gradient(135deg, rgba(0, 255, 140, 0.05), rgba(0, 225, 255, 0.05));
+      border: 1px solid var(--border-color);
+      padding: 35px 20px;
+      border-radius: 12px;
+      margin-bottom: 70px;
+      text-align: center;
+    }
+
+    .stat-item .num {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 2.5rem;
+      font-weight: 900;
+      color: var(--accent-green);
+    }
+
+    .stat-item .label {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border-color);
+      padding: 40px 20px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      background: #07090e;
+    }
+
+    footer a {
+      color: var(--accent-green);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="badge">Roblox Tycoon Prototype v1.0.0</div>
+    <h1>MINING EMPIRE TYCOON</h1>
+    <p class="hero-subtitle">
+      An architecture-clean, Rojo-compatible Roblox tycoon featuring 6 mirrored arena plots, 2-floor expansion, 10 ore & gem droppers, security laser gates, and PvP cash drops.
+    </p>
+    <div class="cta-buttons">
+      <a href="https://github.com/florhm/Rblx-tycn" class="btn btn-primary" target="_blank">View on GitHub</a>
+      <a href="#architecture" class="btn btn-secondary">System Architecture</a>
+    </div>
+  </header>
+
+  <div class="container">
+
+    <div class="stats-banner">
+      <div class="stat-item">
+        <div class="num">6</div>
+        <div class="label">Mirrored Arena Plots</div>
+      </div>
+      <div class="stat-item">
+        <div class="num">10</div>
+        <div class="label">Ore & Gem Tier Droppers</div>
+      </div>
+      <div class="stat-item">
+        <div class="num">2</div>
+        <div class="label">Factory Floors</div>
+      </div>
+      <div class="stat-item">
+        <div class="num">3</div>
+        <div class="label">PvP Armory Weapons</div>
+      </div>
+    </div>
+
+    <h2 class="section-title">Key Systems & Features</h2>
+
+    <div class="grid">
+      <div class="card">
+        <div class="card-icon">🏛️</div>
+        <h3>6 Mirrored Arena Plots</h3>
+        <p>Arranged in two opposing rows facing a central cobblestone plaza. Plots feature unique neon accent colors and direction-aware conveyor velocity calculation.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">💎</div>
+        <h3>10-Tier Ore Progression</h3>
+        <p>Ground floor droppers range from Dirt to Diamond, while Floor 2 unlocks Ruby Rigs, Emerald Crushers, Uranium Refineries, and Voidstone Extractors.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">🏦</div>
+        <h3>Cash Collection Vault</h3>
+        <p>Ore earnings deposit into a plot vault instead of instant balance updates. Players step on their neon Cash Hub with HD audio and particle feedback to claim funds.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">⚡</div>
+        <h3>Security Laser Gate</h3>
+        <p>Purchasable perimeter walls feature a front door laser grid. Non-owners touching the beam are instantly eliminated with particle effects and kill sounds.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">⚔️</div>
+        <h3>Armory & PvP Cash Drops</h3>
+        <p>Unlock the Miner's Sword, Laser Blaster, and Rail Gun. Defeated players drop 10% of their cash as a physical gold reward for their attacker.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">🌋</div>
+        <h3>Volcanic Environment</h3>
+        <p>Surrounded by 28 mountain peaks, 10 mesas, street lamp posts, radial paths, and low-poly trees and rocks built entirely with clean Luau procedural math.</p>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="architecture">System Architecture</h2>
+
+    <div class="arch-box">
+      <p style="margin-bottom: 20px; color: var(--text-muted);">
+        The project follows clean object-oriented patterns in Luau, modular configuration, and Rojo directory mapping:
+      </p>
+      <div class="code-tree">
+Rblx-tycn/
+├── default.project.json           # Rojo project mapping
+├── README.md                      # GitHub repository documentation
+├── docs/                          # GitHub Pages site
+│   └── index.html                 # Interactive showcase page
+└── src/
+    ├── ReplicatedStorage/
+    │   └── TycoonConfig.luau       # Centralized layout, pricing, droppers & weapons config
+    ├── ServerScriptService/
+    │   ├── Main.server.luau        # Leaderstats, plot manager, PvP cash drop loop
+    │   ├── PlotBuilder.luau        # Procedural geometry generator for plots & weapons
+    │   ├── Tycoon.luau             # OOP Tycoon instance manager, sales, lasers & weapons
+    │   └── WorldBuilder.luau       # Volcanic landscape, plaza, paths & mountain horizon
+    └── StarterPlayerScripts/
+        └── HudClient.client.luau   # Local player HUD hint overlays
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    <p>Mining Empire Tycoon &bull; Developed with Rojo & Luau &bull; Hosted on <a href="https://github.com/florhm/Rblx-tycn" target="_blank">GitHub</a></p>
+  </footer>
+
+</body>
+</html>

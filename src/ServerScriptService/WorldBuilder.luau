@@ -4,6 +4,8 @@ local WorldBuilder = {}
 
 local rng = Random.new(42)
 
+local Config = require(game:GetService("ReplicatedStorage"):WaitForChild("TycoonConfig"))
+
 local function makePart(props, parent)
 	local p = Instance.new("Part")
 	p.Anchored = true
@@ -131,17 +133,35 @@ local function buildLamp(parent, pos)
 	m.Parent = parent
 end
 
+local function computeBranches()
+	local branches = {}
+	for _, layout in ipairs(Config.PlotLayout) do
+		local yaw = layout.Yaw or 0
+		local base = Vector3.new(layout.X, 0, layout.Z)
+		local off = CFrame.new(-6.5, 0, -Config.Layout.FloorSize.Z / 2 - 3)
+		local world = base + (CFrame.Angles(0, math.rad(yaw), 0) * off).Position
+		local north = world.Z > 0
+		table.insert(branches, {
+			x = world.X,
+			z = world.Z,
+			zmin = north and 39 or (-math.abs(world.Z) - 6),
+			zmax = north and (math.abs(world.Z) + 6) or -39,
+		})
+	end
+	return branches
+end
+
+local Branches = computeBranches()
+
 local function isBlocked(x, z)
-	if math.abs(x) < 200 and math.abs(z) > 60 then
-		return true
-	end
-	if math.abs(x) < 25 and math.abs(z) < 25 then
-		return true
-	end
+	if math.abs(x) < 30 and math.abs(z) < 30 then return true end
+	if math.abs(z) > 35 and math.abs(z) < 49 then return true end
+	if math.abs(x) < 7 and math.abs(z) < 49 then return true end
 	for _, cx in ipairs({ -150, 0, 150 }) do
-		if math.abs(x - cx) < 10 and math.abs(z) > 12 and math.abs(z) < 75 then
-			return true
-		end
+		if math.abs(x - cx) < 13 and math.abs(z) > 60 then return true end
+	end
+	for _, b in ipairs(Branches) do
+		if math.abs(x - b.x) < 7 and z > b.zmin and z < b.zmax then return true end
 	end
 	return false
 end
@@ -171,16 +191,39 @@ function WorldBuilder.Build()
 		spawnLoc.Material = Enum.Material.Basalt
 		spawnLoc.Color = Color3.fromRGB(48, 50, 58)
 	end
+	makePart({ Name = "Plaza", Size = Vector3.new(30, 0.4, 30), CFrame = CFrame.new(0, 0.2, 0), Color = Color3.fromRGB(72, 74, 84), Material = Enum.Material.Cobblestone }, decor)
+	makePart({ Name = "PlazaRing", Size = Vector3.new(32, 0.35, 32), CFrame = CFrame.new(0, 0.18, 0), Color = Color3.fromRGB(0, 255, 140), Material = Enum.Material.Neon }, decor)
 
-	makePart({ Name = "Plaza", Size = Vector3.new(28, 0.4, 28), CFrame = CFrame.new(0, 0.2, 0), Color = Color3.fromRGB(72, 74, 84), Material = Enum.Material.Cobblestone }, decor)
-	makePart({ Name = "PlazaRing", Size = Vector3.new(30, 0.35, 30), CFrame = CFrame.new(0, 0.18, 0), Color = Color3.fromRGB(0, 255, 140), Material = Enum.Material.Neon }, decor)
-
-	for _, cx in ipairs({ -150, 0, 150 }) do
-		for _, side in ipairs({ -1, 1 }) do
-			makePart({ Name = "Path", Size = Vector3.new(10, 0.3, 60), CFrame = CFrame.new(cx, 0.15, side * 42), Color = Color3.fromRGB(80, 78, 86), Material = Enum.Material.Cobblestone }, decor)
-			makePart({ Name = "PathTrimL", Size = Vector3.new(0.4, 0.35, 60), CFrame = CFrame.new(cx - 5.1, 0.17, side * 42), Color = Color3.fromRGB(0, 200, 255), Material = Enum.Material.Neon }, decor)
-			makePart({ Name = "PathTrimR", Size = Vector3.new(0.4, 0.35, 60), CFrame = CFrame.new(cx + 5.1, 0.17, side * 42), Color = Color3.fromRGB(0, 200, 255), Material = Enum.Material.Neon }, decor)
+	local roadCol = Color3.fromRGB(82, 80, 90)
+	local trimCol = Color3.fromRGB(0, 220, 255)
+	local function road(x1, z1, x2, z2, w)
+		local minX, maxX = math.min(x1, x2), math.max(x1, x2)
+		local minZ, maxZ = math.min(z1, z2), math.max(z1, z2)
+		local lenX = maxX - minX
+		local lenZ = maxZ - minZ
+		local cy = 0.15
+		if lenX < 0.1 then
+			local c = CFrame.new((x1 + x2) / 2, cy, (z1 + z2) / 2)
+			makePart({ Name = "Path", Size = Vector3.new(w, 0.3, lenZ + w), CFrame = c, Color = roadCol, Material = Enum.Material.Cobblestone }, decor)
+			makePart({ Name = "Trim", Size = Vector3.new(0.4, 0.35, lenZ + w), CFrame = c + Vector3.new(-w / 2 - 0.2, 0, 0), Color = trimCol, Material = Enum.Material.Neon }, decor)
+			makePart({ Name = "Trim", Size = Vector3.new(0.4, 0.35, lenZ + w), CFrame = c + Vector3.new(w / 2 + 0.2, 0, 0), Color = trimCol, Material = Enum.Material.Neon }, decor)
+		else
+			local c = CFrame.new((x1 + x2) / 2, cy, (z1 + z2) / 2)
+			makePart({ Name = "Path", Size = Vector3.new(lenX + w, 0.3, w), CFrame = c, Color = roadCol, Material = Enum.Material.Cobblestone }, decor)
+			makePart({ Name = "Trim", Size = Vector3.new(lenX + w, 0.35, 0.4), CFrame = c + Vector3.new(0, 0, -w / 2 - 0.2), Color = trimCol, Material = Enum.Material.Neon }, decor)
+			makePart({ Name = "Trim", Size = Vector3.new(lenX + w, 0.35, 0.4), CFrame = c + Vector3.new(0, 0, w / 2 + 0.2), Color = trimCol, Material = Enum.Material.Neon }, decor)
 		end
+	end
+
+	road(0, 14, 0, 42, 10)
+	road(0, -14, 0, -42, 10)
+	road(-210, 42, 210, 42, 10)
+	road(-210, -42, 210, -42, 10)
+	for _, b in ipairs(Branches) do
+		local padZ = b.z
+		local startZ = (padZ > 0) and 42 or -42
+		local endZ = padZ
+		road(b.x, startZ, b.x, endZ, 10)
 	end
 
 	local signBoard = makePart({ Name = "SignBoard", Size = Vector3.new(16, 4.5, 0.8), CFrame = CFrame.new(0, 7.5, -17), Color = Color3.fromRGB(30, 32, 40), Material = Enum.Material.Metal }, decor)
@@ -201,45 +244,55 @@ function WorldBuilder.Build()
 	signLabel.Text = "MINING EMPIRE"
 	signLabel.Parent = sg
 
-	for _, cx in ipairs({ -150, 0, 150 }) do
-		for _, z in ipairs({ -52, -30, 30, 52 }) do
-			local off = (z < 0) and 7 or -7
-			buildLamp(decor, Vector3.new(cx + off, 0, z))
+	for _, z in ipairs({ 50, -50 }) do
+		for _, x in ipairs({ -180, -120, -60, 0, 60, 120, 180 }) do
+			if not isBlocked(x, z) then
+				buildLamp(decor, Vector3.new(x, 0, z))
+			end
 		end
 	end
+	buildLamp(decor, Vector3.new(-14, 0, 14))
+	buildLamp(decor, Vector3.new(14, 0, 14))
+	buildLamp(decor, Vector3.new(-14, 0, -14))
+	buildLamp(decor, Vector3.new(14, 0, -14))
 
 	for i, color in ipairs({ Color3.fromRGB(0, 230, 255), Color3.fromRGB(255, 90, 200), Color3.fromRGB(0, 255, 140), Color3.fromRGB(255, 180, 40) }) do
 		local angle = (i / 4) * math.pi * 2
 		buildCrystalCluster(decor, Vector3.new(math.cos(angle) * 16, 0.2, math.sin(angle) * 16), color)
 	end
 
-	for i = 1, 14 do
-		local x, z = rng:NextNumber(-220, 220), rng:NextNumber(-55, 55)
-		if not isBlocked(x, z) then
-			buildTree(decor, Vector3.new(x, 0, z))
+	local function scatter(count, xr, zr)
+		local placed, tries = 0, 0
+		while placed < count and tries < count * 6 do
+			tries = tries + 1
+			local x = rng:NextNumber(xr[1], xr[2])
+			local z = rng:NextNumber(zr[1], zr[2])
+			if isBlocked(x, z) then continue end
+			local r = rng:NextNumber()
+			if r < 0.5 then
+				buildTree(decor, Vector3.new(x, 0, z))
+			elseif r < 0.78 then
+				buildBush(decor, Vector3.new(x, 0, z))
+			else
+				buildRock(decor, Vector3.new(x, 0, z))
+			end
+			placed = placed + 1
 		end
 	end
-	for i = 1, 14 do
-		buildTree(decor, Vector3.new(rng:NextNumber(-300, 300), 0, rng:NextNumber(-280, -160)))
-	end
-	for i = 1, 14 do
-		buildTree(decor, Vector3.new(rng:NextNumber(-300, 300), 0, rng:NextNumber(160, 280)))
-	end
+	scatter(40, { -270, 270 }, { -150, 150 })
+	scatter(20, { -270, -70 }, { -30, 30 })
+	scatter(20, { 70, 270 }, { -30, 30 })
 
 	for i = 1, 24 do
-		local x, z = rng:NextNumber(-280, 280), rng:NextNumber(-150, 150)
-		if not isBlocked(x, z) then
-			if rng:NextNumber() < 0.5 then
-				buildRock(decor, Vector3.new(x, 0, z))
-			else
-				buildBush(decor, Vector3.new(x, 0, z))
-			end
-		end
+		buildTree(decor, Vector3.new(rng:NextNumber(-320, 320), 0, rng:NextNumber(-300, -170)))
+	end
+	for i = 1, 24 do
+		buildTree(decor, Vector3.new(rng:NextNumber(-320, 320), 0, rng:NextNumber(170, 300)))
 	end
 
 	for i = 1, 10 do
 		local angle = (i / 10) * math.pi * 2 + rng:NextNumber(-0.15, 0.15)
-		local r = rng:NextNumber(320, 480)
+		local r = rng:NextNumber(330, 470)
 		local x, z = math.cos(angle) * r, math.sin(angle) * r
 		local h = rng:NextNumber(40, 100)
 		makePart({
@@ -251,19 +304,21 @@ function WorldBuilder.Build()
 		}, decor)
 	end
 
-	for i = 1, 28 do
-		local angle = (i / 28) * math.pi * 2 + rng:NextNumber(-0.04, 0.04)
-		local r = rng:NextNumber(640, 820)
+	for i = 1, 30 do
+		local angle = (i / 30) * math.pi * 2 + rng:NextNumber(-0.04, 0.04)
+		local r = rng:NextNumber(660, 860)
 		local x, z = math.cos(angle) * r, math.sin(angle) * r
-		local h = rng:NextNumber(90, 220)
-		local w = rng:NextNumber(90, 170)
+		local h = rng:NextNumber(90, 230)
+		local w = rng:NextNumber(90, 175)
+		local snow = rng:NextNumber() < 0.35
+		local baseCol = snow and Color3.fromRGB(60, 64, 74) or Color3.fromRGB(30, 32, 40)
 		local cf = CFrame.new(x, h / 2 - 4, z) * CFrame.Angles(0, -angle + math.rad(rng:NextNumber(-25, 25)), 0)
 		if i % 3 == 0 then
 			makeWedge({
 				Name = "Mountain",
 				Size = Vector3.new(w, h, w * rng:NextNumber(1, 1.4)),
 				CFrame = cf,
-				Color = Color3.fromRGB(30, 32, 40),
+				Color = baseCol,
 				Material = Enum.Material.Slate,
 			}, decor)
 		else
@@ -271,8 +326,18 @@ function WorldBuilder.Build()
 				Name = "Mountain",
 				Size = Vector3.new(w, h, w * rng:NextNumber(0.7, 1)),
 				CFrame = cf,
-				Color = Color3.fromRGB(30, 32, 40),
+				Color = baseCol,
 				Material = Enum.Material.Slate,
+			}, decor)
+		end
+		if snow then
+			makePart({
+				Name = "SnowCap",
+				Shape = Enum.PartType.Ball,
+				Size = Vector3.new(w * 0.5, w * 0.4, w * 0.5),
+				CFrame = cf + Vector3.new(0, h * 0.42, 0),
+				Color = Color3.fromRGB(235, 240, 250),
+				Material = Enum.Material.Snow,
 			}, decor)
 		end
 	end

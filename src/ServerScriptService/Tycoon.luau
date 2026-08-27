@@ -32,6 +32,21 @@ function Tycoon:_getCash(player)
 	return stats and stats:FindFirstChild("Cash")
 end
 
+function Tycoon:_fireJuice(player, kind, intensity)
+	if not player then return end
+	local ev = ReplicatedStorage:FindFirstChild("JuiceEvent")
+	if ev then
+		ev:FireClient(player, kind, intensity or 1)
+	end
+end
+
+function Tycoon:_fireJuiceAll(kind, intensity)
+	local ev = ReplicatedStorage:FindFirstChild("JuiceEvent")
+	if ev then
+		ev:FireAllClients(kind, intensity or 1)
+	end
+end
+
 function Tycoon:_setPadText(text)
 	local bb = self.Model.ClaimPad:FindFirstChildWhichIsA("BillboardGui")
 	if bb then
@@ -98,6 +113,96 @@ function Tycoon:_setup()
 
 	self:_applyBeltTier(1)
 	self:_refreshButtons()
+
+	self:_ensureWayfinder()
+	self:_updateWayfinder()
+end
+
+function Tycoon:_ensureWayfinder()
+	if self.Model:FindFirstChild("WayfinderOrigin") then return end
+	local origin = Instance.new("Part")
+	origin.Name = "WayfinderOrigin"
+	origin.Size = Vector3.new(0.5, 0.5, 0.5)
+	origin.Transparency = 1
+	origin.Anchored = true
+	origin.CanCollide = false
+	origin.CFrame = self.Model.Floor.CFrame * CFrame.new(0, 12, 0)
+	origin.Parent = self.Model
+
+	local target = Instance.new("Part")
+	target.Name = "WayfinderTarget"
+	target.Size = Vector3.new(0.5, 0.5, 0.5)
+	target.Transparency = 1
+	target.Anchored = true
+	target.CanCollide = false
+	target.CFrame = origin.CFrame
+	target.Parent = self.Model
+
+	local a0 = Instance.new("Attachment")
+	a0.Name = "A0"
+	a0.Parent = origin
+	local a1 = Instance.new("Attachment")
+	a1.Name = "A1"
+	a1.Parent = target
+
+	local beam = Instance.new("Beam")
+	beam.Name = "WayfinderBeam"
+	beam.Attachment0 = a0
+	beam.Attachment1 = a1
+	beam.Color = ColorSequence.new(Color3.fromRGB(0, 255, 140))
+	beam.LightEmission = 1
+	beam.LightInfluence = 0
+	beam.Width0 = 0.6
+	beam.Width1 = 0.2
+	beam.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	beam.TextureMode = Enum.TextureMode.Wrap
+	beam.TextureLength = 4
+	beam.TextureSpeed = 2
+	beam.Enabled = false
+	beam.Parent = origin
+
+	local light = Instance.new("PointLight")
+	light.Color = Color3.fromRGB(0, 255, 140)
+	light.Range = 12
+	light.Brightness = 1.5
+	light.Parent = origin
+end
+
+function Tycoon:_updateWayfinder()
+	local origin = self.Model:FindFirstChild("WayfinderOrigin")
+	local target = self.Model:FindFirstChild("WayfinderTarget")
+	local beam = origin and origin:FindFirstChild("WayfinderBeam")
+	if not origin or not target or not beam then return end
+
+	if not self.Owner then
+		beam.Enabled = false
+		return
+	end
+
+	local best, bestCost = nil, math.huge
+	for _, folder in ipairs({ self.Model.Buttons, self.Model.Buttons2 }) do
+		for _, btn in ipairs(folder:GetChildren()) do
+			local id = btn:GetAttribute("Id")
+			if not self.Purchased[id] then
+				local req = btn:GetAttribute("Requires")
+				local gateOpen = (req == "") or self.Purchased[req]
+				if gateOpen then
+					local cost = btn:GetAttribute("Cost") or math.huge
+					if cost < bestCost then
+						bestCost = cost
+						best = btn
+					end
+				end
+			end
+		end
+	end
+
+	if best then
+		target.CFrame = best.CFrame
+		beam.Enabled = true
+	else
+		beam.Enabled = false
+	end
 end
 
 function Tycoon:_collect(hit, collectorPart)
@@ -146,11 +251,15 @@ function Tycoon:_collect(hit, collectorPart)
 		sound.PlaybackSpeed = math.min(0.95 + (self._comboCount * 0.05), 1.6)
 		sound:Play()
 	end
+	if self.Owner and (paid >= 300 or self._comboCount >= 4) then
+		self:_fireJuice(self.Owner, "Shake", math.clamp(self._comboCount * 0.3 + paid/1000, 0.5, 1.5))
+	end
 end
 
 function Tycoon:_sellPopup(collectorPart, amount, color, combo)
+	local isCrit = (amount >= 500) or (combo and combo > 3)
 	local bb = Instance.new("BillboardGui")
-	bb.Size = UDim2.fromOffset(140, 46)
+	bb.Size = isCrit and UDim2.fromOffset(190, 64) or UDim2.fromOffset(140, 46)
 	bb.StudsOffset = Vector3.new(math.random(-18, 18) / 10, 2, 0)
 	bb.AlwaysOnTop = true
 	bb.MaxDistance = 90
@@ -160,8 +269,13 @@ function Tycoon:_sellPopup(collectorPart, amount, color, combo)
 	tl.BackgroundTransparency = 1
 	tl.Font = Enum.Font.GothamBlack
 	tl.TextScaled = true
-	tl.TextColor3 = (amount >= 500) and Color3.fromRGB(255, 220, 60) or (color or Color3.fromRGB(140, 255, 160))
-	tl.TextStrokeTransparency = 0.2
+	if isCrit then
+		tl.TextColor3 = (amount >= 1000) and Color3.fromRGB(255, 60, 60) or Color3.fromRGB(255, 220, 60)
+		tl.TextStrokeTransparency = 0.0
+	else
+		tl.TextColor3 = (amount >= 500) and Color3.fromRGB(255, 220, 60) or (color or Color3.fromRGB(140, 255, 160))
+		tl.TextStrokeTransparency = 0.2
+	end
 
 	if combo and combo > 2 then
 		tl.Text = "+$" .. self:_formatNumber(amount) .. " x" .. combo .. "!"
@@ -169,6 +283,17 @@ function Tycoon:_sellPopup(collectorPart, amount, color, combo)
 		tl.Text = "+$" .. self:_formatNumber(amount)
 	end
 	tl.Parent = bb
+
+	local scale = Instance.new("UIScale")
+	scale.Scale = 0.5
+	scale.Parent = tl
+	TweenService:Create(scale, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = isCrit and 1.35 or 1.15 }):Play()
+	task.delay(0.35, function()
+		if scale.Parent then
+			TweenService:Create(scale, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Scale = 1 }):Play()
+		end
+	end)
+
 	bb.Adornee = collectorPart
 	bb.Parent = collectorPart
 
@@ -240,6 +365,13 @@ function Tycoon:_onHubTouch(hit)
 	if sound then
 		sound:Play()
 	end
+	self:_fireJuice(player, "Shake", math.clamp(amount/2000, 0.5, 2))
+	if amount >= 5000 then
+		self:_fireJuice(player, "Flash", 1)
+	end
+	if amount >= 2000 then
+		self:_fireJuice(player, "FOV", 1)
+	end
 end
 
 function Tycoon:_onLaserTouch(hit)
@@ -267,6 +399,10 @@ function Tycoon:_onLaserTouch(hit)
 	if sound then
 		sound:Play()
 	end
+	if player then
+		self:_fireJuice(player, "Shake", 2)
+		self:_fireJuice(player, "Flash", 0.5)
+	end
 end
 
 function Tycoon:_applyBeltTier(tier)
@@ -291,6 +427,7 @@ function Tycoon:_refreshButtons()
 			PlotBuilder.SetVisible(btn, gateOpen and not self.Purchased[id])
 		end
 	end
+	self:_updateWayfinder()
 end
 
 function Tycoon:_tryPurchase(btn, player)
@@ -354,10 +491,104 @@ function Tycoon:_juice(btn)
 	end
 end
 
+function Tycoon:_bigReveal(pos, color)
+	local ev = ReplicatedStorage:FindFirstChild("JuiceEvent")
+	if ev then
+		ev:FireAllClients("LevelUp", 1)
+	end
+	local Lighting = game:GetService("Lighting")
+	local bloom = Lighting:FindFirstChildOfClass("BloomEffect")
+	if bloom then
+		local orig = bloom.Intensity
+		TweenService:Create(bloom, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Intensity = orig + 2 }):Play()
+		task.delay(0.6, function()
+			TweenService:Create(bloom, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Intensity = orig }):Play()
+		end)
+	end
+	for i = 1, 8 do
+		local angle = (i/8)*360
+		local beam = Instance.new("Part")
+		beam.Anchored = true
+		beam.CanCollide = false
+		beam.Material = Enum.Material.Neon
+		beam.Color = color or Color3.fromRGB(255, 220, 60)
+		beam.Size = Vector3.new(0.6, 18, 0.6)
+		beam.CFrame = CFrame.new(pos + Vector3.new(math.cos(math.rad(angle))*2, 9, math.sin(math.rad(angle))*2))
+		beam.Parent = workspace
+		TweenService:Create(beam, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Transparency = 1, Size = Vector3.new(0.1, 18, 0.1) }):Play()
+		Debris:AddItem(beam, 0.7)
+		local pe = Instance.new("ParticleEmitter")
+		pe.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+		pe.Color = ColorSequence.new(color or Color3.fromRGB(255,220,60))
+		pe.LightEmission = 1
+		pe.Size = NumberSequence.new(1.2)
+		pe.Speed = NumberRange.new(12, 18)
+		pe.Lifetime = NumberRange.new(0.6, 0.9)
+		pe.SpreadAngle = Vector2.new(180,180)
+		pe.Enabled = false
+		pe.Parent = beam
+		pe:Emit(30)
+	end
+end
+
+function Tycoon:_announce(msg, color)
+	local ev = ReplicatedStorage:FindFirstChild("JuiceEvent")
+	if ev then
+		ev:FireAllClients("Announce", msg)
+	end
+	print("[ANNOUNCE] " .. msg)
+end
+
+function Tycoon:_givePrestige(player, tierName, color)
+	if not player or not player.Character then return end
+	local head = player.Character:FindFirstChild("Head")
+	if not head then return end
+	if head:FindFirstChild("PrestigeTag") then head.PrestigeTag:Destroy() end
+	if head:FindFirstChild("PrestigeAura") then head.PrestigeAura:Destroy() end
+	local bb = Instance.new("BillboardGui")
+	bb.Name = "PrestigeTag"
+	bb.Size = UDim2.fromOffset(180, 32)
+	bb.StudsOffset = Vector3.new(0, 3.5, 0)
+	bb.AlwaysOnTop = true
+	bb.Parent = head
+	local tl = Instance.new("TextLabel")
+	tl.Size = UDim2.fromScale(1,1)
+	tl.BackgroundTransparency = 1
+	tl.Font = Enum.Font.GothamBlack
+	tl.TextScaled = true
+	tl.TextColor3 = color or Color3.fromRGB(255,220,60)
+	tl.TextStrokeTransparency = 0.2
+	tl.Text = tierName
+	tl.Parent = bb
+	local aura = Instance.new("ParticleEmitter")
+	aura.Name = "PrestigeAura"
+	aura.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	aura.Color = ColorSequence.new(color or Color3.fromRGB(255,220,60))
+	aura.LightEmission = 1
+	aura.Size = NumberSequence.new(1.2)
+	aura.Rate = 8
+	aura.Lifetime = NumberRange.new(0.8, 1.2)
+	aura.Speed = NumberRange.new(2, 4)
+	aura.Parent = head
+	local light = Instance.new("PointLight")
+	light.Color = color or Color3.fromRGB(255,220,60)
+	light.Range = 12
+	light.Brightness = 2
+	light.Parent = head
+end
+
 function Tycoon:_applyPurchase(kind, target)
 	if kind == "Dropper" then
 		PlotBuilder.SetVisible(self.Model.Locked["Dropper_" .. target], true)
 		self:_activateDropper(target)
+		if target == "Voidstone" then
+			local m = self.Model.Locked:FindFirstChild("Dropper_"..target)
+			local pos = m and m:GetBoundingBox()
+			self:_bigReveal(pos and (pos.Position) or self.Model.Floor.Position + Vector3.new(0,10,0), Color3.fromRGB(190,80,255))
+			if self.Owner then
+				self:_announce(self.Owner.DisplayName .. " unlocked Voidstone Extractor! [MYTHIC]", Color3.fromRGB(190,80,255))
+			end
+		end
 	elseif kind == "BeltSpeed" then
 		self:_applyBeltTier(tonumber(target) or 2)
 	elseif kind == "ValueTier" then
@@ -379,8 +610,22 @@ function Tycoon:_applyPurchase(kind, target)
 	elseif kind == "Complete" then
 		if target == "2" then
 			PlotBuilder.SetVisible(self.Model.Locked.CompleteSign2, true)
+			local sign = self.Model.Locked:FindFirstChild("CompleteSign2")
+			local pos = sign and sign:GetBoundingBox()
+			self:_bigReveal(pos and pos.Position or self.Model.Floor.Position + Vector3.new(0,20,0), Color3.fromRGB(255,60,90))
+			if self.Owner then
+				self:_announce(self.Owner.DisplayName .. " just unlocked EMPIRE COMPLETE! [LEGENDARY]", Color3.fromRGB(255,60,90))
+				self:_givePrestige(self.Owner, "EMPIRE LEGEND", Color3.fromRGB(255,60,90))
+			end
 		else
 			PlotBuilder.SetVisible(self.Model.Locked.CompleteSign1, true)
+			local sign = self.Model.Locked:FindFirstChild("CompleteSign1")
+			local pos = sign and sign:GetBoundingBox()
+			self:_bigReveal(pos and pos.Position or self.Model.Floor.Position + Vector3.new(0,10,0), Color3.fromRGB(255,220,60))
+			if self.Owner then
+				self:_announce(self.Owner.DisplayName .. " just completed TYCOON! [EPIC]", Color3.fromRGB(255,220,60))
+				self:_givePrestige(self.Owner, "TYCOON MASTER", Color3.fromRGB(255,220,60))
+			end
 		end
 	end
 end
@@ -603,12 +848,21 @@ function Tycoon:_fireWeapon(player, tool, wid)
 			humanoid:SetAttribute("KillerUserId", player.UserId)
 			humanoid:TakeDamage(cfg.Damage)
 			self:_impactBurst(hitChar:FindFirstChild("HumanoidRootPart"))
+			local victimPlayer = Players:GetPlayerFromCharacter(hitChar)
+			if victimPlayer then
+				self:_fireJuice(victimPlayer, "Shake", cfg.Damage >= 100 and 2 or 1)
+				self:_fireJuice(victimPlayer, "Flash", 0.3)
+			end
+			self:_fireJuice(player, "Shake", 0.6)
 		end
+	else
+		self:_fireJuice(player, "Shake", 0.2)
 	end
 end
 
 function Tycoon:SetOwner(player)
 	self.Owner = player
+	self.Model:SetAttribute("OwnerUserId", player.UserId)
 	self:_setPadText(player.DisplayName .. "'s Factory")
 	PlotBuilder.SetVisible(self.Model.Locked["Dropper_Dirt"], true)
 	self:_activateDropper("Dirt")
@@ -639,6 +893,7 @@ function Tycoon:Reset()
 		end
 	end
 	self.Owner = nil
+	self.Model:SetAttribute("OwnerUserId", 0)
 	self:_setPadText("CLAIM PLOT")
 	self:_updateHub()
 	self:_refreshButtons()

@@ -292,7 +292,7 @@ local function buildStairsAndFloor2(accent, base, beltDir, parent)
 	end
 
 	local collector2 = makePart({ Name = "Collector2", Size = Vector3.new(6, 1, 4), CFrame = base * CFrame.new(0, 13.9, 15), Color = Color3.fromRGB(90, 230, 110), Material = Enum.Material.Neon }, m)
-	attachBillboard(collector2, "SELL ORE", 140, 48, 2, Color3.fromRGB(20, 40, 25))
+	attachBillboard(collector2, "SELL ORE", 90, 28, 1.8, Color3.fromRGB(20, 40, 25))
 	makeEmitter(collector2, ColorSequence.new(Color3.fromRGB(120, 255, 150)), 0.6, 10, 0.5, "SellBurst")
 	attachSound(collector2, "SellSound", "rbxasset://sounds/electronicpingshort.wav", 1.1)
 
@@ -347,7 +347,7 @@ local function buildButtons(folder, defs, cols, rows, yBase, accent, base)
 		btn:SetAttribute("Target", def.Target or "")
 		btn:SetAttribute("Requires", def.Requires or "")
 
-		attachBillboard(btn, def.Name .. "\n$" .. comma(def.Cost), 200, 76, 3.2, Color3.fromRGB(22, 26, 36))
+		attachBillboard(btn, def.Name .. "\n$" .. comma(def.Cost), 130, 44, 2.4, Color3.fromRGB(22, 26, 36))
 		makeEmitter(btn, RAINBOW, 0.9, 16, 0.9, "BuyBurst")
 		attachSound(btn, "BuySound", "rbxasset://sounds/electronicpingshort.wav", 1.1)
 
@@ -361,8 +361,12 @@ local function buildButtons(folder, defs, cols, rows, yBase, accent, base)
 		prompt.ObjectText = def.Name
 		prompt.ActionText = "Buy ($" .. comma(def.Cost) .. ")"
 		prompt.HoldDuration = 0
-		prompt.MaxActivationDistance = 9
+		prompt.MaxActivationDistance = 14
 		prompt.RequiresLineOfSight = false
+		prompt.Exclusivity = Enum.ProximityPromptExclusivity.OnePerButton
+		prompt.ClickablePrompt = true
+		prompt.KeyboardKeyCode = Enum.KeyCode.E
+		prompt.GamepadKeyCode = Enum.KeyCode.ButtonX
 		prompt.Parent = btn
 	end
 end
@@ -447,7 +451,8 @@ function PlotBuilder.Build(index, origin, yaw)
 	makePart({ Name = "Porch", Size = Vector3.new(26, 2, 6), CFrame = base * CFrame.new(0, -1, -FZ / 2 - 3), Color = Color3.fromRGB(45, 47, 53), Material = Enum.Material.Slate }, model)
 
 	local claimPad = makePart({ Name = "ClaimPad", Size = Vector3.new(12, 0.4, 4), CFrame = base * CFrame.new(-6.5, 0.2, -FZ / 2 - 3), Color = accent, Material = Enum.Material.Neon }, model)
-	attachBillboard(claimPad, "CLAIM PLOT", 220, 52, 4, Color3.fromRGB(15, 30, 22))
+	attachBillboard(claimPad, "CLAIM PLOT", 140, 34, 3, Color3.fromRGB(15, 30, 22))
+	claimPad:SetAttribute("IsClaimPad", true)
 	TweenService:Create(claimPad, TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), { Transparency = 0.35 }):Play()
 
 	local hub = makePart({
@@ -458,7 +463,7 @@ function PlotBuilder.Build(index, origin, yaw)
 		Color = Color3.fromRGB(255, 200, 50),
 		Material = Enum.Material.Neon,
 	}, model)
-	attachBillboard(hub, "COLLECT\n$0", 180, 76, 5, Color3.fromRGB(40, 32, 10))
+	attachBillboard(hub, "COLLECT\n$0", 120, 44, 3.5, Color3.fromRGB(40, 32, 10))
 	makeEmitter(hub, ColorSequence.new(Color3.fromRGB(255, 220, 80)), 0.9, 14, 0.9, "CashBurst")
 
 	local cashSound = Instance.new("Sound")
@@ -487,7 +492,7 @@ function PlotBuilder.Build(index, origin, yaw)
 	end
 
 	local collector = makePart({ Name = "Collector", Size = Vector3.new(6, 1, 4), CFrame = base * CFrame.new(0, 0.5, L.BeltCenterZ + L.BeltLength / 2 + 2), Color = Color3.fromRGB(90, 230, 110), Material = Enum.Material.Neon }, model)
-	attachBillboard(collector, "SELL ORE", 140, 48, 2, Color3.fromRGB(20, 40, 25))
+	attachBillboard(collector, "SELL ORE", 90, 28, 1.8, Color3.fromRGB(20, 40, 25))
 	makeEmitter(collector, ColorSequence.new(Color3.fromRGB(120, 255, 150)), 0.6, 10, 0.5, "SellBurst")
 	attachSound(collector, "SellSound", "rbxasset://sounds/electronicpingshort.wav", 1.1)
 

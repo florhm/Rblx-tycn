@@ -36,7 +36,7 @@ Config.Belt = {
 Config.ValueMultiplierTiers = { 1, 2, 4, 8 }
 
 Config.Droppers = {
-	Dirt = { Interval = 1.8, Value = 5, Side = "Left", DropZ = -19, Height = 7, SizeScale = 0.9,
+	Dirt = { Interval = 1.6, Value = 8, Side = "Left", DropZ = -19, Height = 7, SizeScale = 0.9,
 		ItemColor = Color3.fromRGB(134, 98, 72), ItemMaterial = Enum.Material.Ground },
 	Stone = { Interval = 1.6, Value = 10, Side = "Right", DropZ = -15, Height = 7, SizeScale = 1.0,
 		ItemColor = Color3.fromRGB(150, 152, 160), ItemMaterial = Enum.Material.Slate },

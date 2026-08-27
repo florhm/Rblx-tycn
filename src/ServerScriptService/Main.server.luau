@@ -7,6 +7,13 @@ local PlotBuilder = require(script.Parent.PlotBuilder)
 local TycoonModule = require(script.Parent.Tycoon)
 local WorldBuilder = require(script.Parent.WorldBuilder)
 
+local juiceEvent = ReplicatedStorage:FindFirstChild("JuiceEvent")
+if not juiceEvent then
+	juiceEvent = Instance.new("RemoteEvent")
+	juiceEvent.Name = "JuiceEvent"
+	juiceEvent.Parent = ReplicatedStorage
+end
+
 local plotsFolder = Instance.new("Folder")
 plotsFolder.Name = "Plots"
 plotsFolder.Parent = workspace
@@ -35,6 +42,69 @@ end
 
 WorldBuilder.Build()
 shared.Tycoons = tycoons
+
+local leaderboardPart = Instance.new("Part")
+leaderboardPart.Name = "SpawnLeaderboard"
+leaderboardPart.Size = Vector3.new(14, 8, 1)
+leaderboardPart.Anchored = true
+leaderboardPart.Color = Color3.fromRGB(20, 22, 30)
+leaderboardPart.Material = Enum.Material.Metal
+leaderboardPart.CFrame = CFrame.new(22, 4, 0) * CFrame.Angles(0, math.rad(-90), 0)
+leaderboardPart.Parent = workspace
+local lbGui = Instance.new("SurfaceGui")
+lbGui.Face = Enum.NormalId.Front
+lbGui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+lbGui.PixelsPerStud = 32
+lbGui.Parent = leaderboardPart
+local lbFrame = Instance.new("Frame")
+lbFrame.Size = UDim2.fromScale(1,1)
+lbFrame.BackgroundTransparency = 1
+lbFrame.Parent = lbGui
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1,0,0,48)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBlack
+title.TextScaled = true
+title.TextColor3 = Color3.fromRGB(255,220,80)
+title.Text = "TOP TYCOONS"
+title.Parent = lbFrame
+local listLayout = Instance.new("UIListLayout")
+listLayout.Padding = UDim.new(0,4)
+listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+listLayout.Parent = lbFrame
+title.LayoutOrder = 0
+local lbLabels = {}
+for i=1,5 do
+	local lbl = Instance.new("TextLabel")
+	lbl.Size = UDim2.new(1,0,0,32)
+	lbl.BackgroundTransparency = 1
+	lbl.Font = Enum.Font.GothamBold
+	lbl.TextScaled = true
+	lbl.TextColor3 = Color3.fromRGB(220,230,255)
+	lbl.TextStrokeTransparency = 0.6
+	lbl.Text = i..". ---"
+	lbl.LayoutOrder = i
+	lbl.Parent = lbFrame
+	lbLabels[i]=lbl
+end
+task.spawn(function()
+	while true do
+		local entries = {}
+		for _, pl in ipairs(Players:GetPlayers()) do
+			local c = pl:FindFirstChild("leaderstats") and pl.leaderstats:FindFirstChild("Cash")
+			if c then table.insert(entries, {pl.DisplayName, c.Value}) end
+		end
+		table.sort(entries, function(a,b) return a[2] > b[2] end)
+		for i=1,5 do
+			if entries[i] then
+				lbLabels[i].Text = i..". "..entries[i][1]..": $"..tostring(entries[i][2])
+			else
+				lbLabels[i].Text = i..". ---"
+			end
+		end
+		task.wait(1.5)
+	end
+end)
 
 local function dropCashPile(victim, killer)
 	local cash = victim:FindFirstChild("leaderstats") and victim.leaderstats.Cash

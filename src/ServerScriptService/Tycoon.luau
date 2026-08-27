@@ -422,9 +422,13 @@ function Tycoon:_refreshButtons()
 	for _, folder in ipairs({ self.Model.Buttons, self.Model.Buttons2 }) do
 		for _, btn in ipairs(folder:GetChildren()) do
 			local id = btn:GetAttribute("Id")
-			local req = btn:GetAttribute("Requires")
-			local gateOpen = (req == "") or self.Purchased[req] == true
-			PlotBuilder.SetVisible(btn, gateOpen and not self.Purchased[id])
+			if not self.Owner then
+				PlotBuilder.SetVisible(btn, false)
+			else
+				local req = btn:GetAttribute("Requires")
+				local gateOpen = (req == "") or self.Purchased[req] == true
+				PlotBuilder.SetVisible(btn, gateOpen and not self.Purchased[id])
+			end
 		end
 	end
 	self:_updateWayfinder()

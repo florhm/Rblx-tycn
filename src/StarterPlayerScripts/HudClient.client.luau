@@ -153,6 +153,50 @@ guideArrow.TextSize = 22
 guideArrow.Text = "▼"
 guideArrow.Parent = guideFrame
 
+local guideFolder = Instance.new("Folder")
+guideFolder.Name = "LocalGuideBeam"
+guideFolder.Parent = workspace
+
+local guideFollow = Instance.new("Part")
+guideFollow.Name = "Follow"
+guideFollow.Transparency = 1
+guideFollow.Anchored = true
+guideFollow.CanCollide = false
+guideFollow.CanQuery = false
+guideFollow.Size = Vector3.new(1, 1, 1)
+guideFollow.Parent = guideFolder
+local guideFollowAtt = Instance.new("Attachment")
+guideFollowAtt.Parent = guideFollow
+
+local guideTarget = Instance.new("Part")
+guideTarget.Name = "Target"
+guideTarget.Transparency = 1
+guideTarget.Anchored = true
+guideTarget.CanCollide = false
+guideTarget.CanQuery = false
+guideTarget.Size = Vector3.new(1, 1, 1)
+guideTarget.Parent = guideFolder
+local guideTargetAtt = Instance.new("Attachment")
+guideTargetAtt.Parent = guideTarget
+
+local guideBeam = Instance.new("Beam")
+guideBeam.Name = "PathBeam"
+guideBeam.Attachment0 = guideFollowAtt
+guideBeam.Attachment1 = guideTargetAtt
+guideBeam.Color = ColorSequence.new(Color3.fromRGB(0, 255, 140))
+guideBeam.Width0 = 1.6
+guideBeam.Width1 = 1.6
+guideBeam.FaceCamera = false
+guideBeam.LightEmission = 1
+guideBeam.LightInfluence = 0
+guideBeam.Transparency = NumberSequence.new(0.35)
+guideBeam.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+guideBeam.TextureMode = Enum.TextureMode.Wrap
+guideBeam.TextureLength = 8
+guideBeam.TextureSpeed = 3
+guideBeam.Enabled = false
+guideBeam.Parent = guideFolder
+
 local flash = Instance.new("Frame")
 flash.Size = UDim2.fromScale(1, 1)
 flash.BackgroundColor3 = Color3.new(1, 1, 1)
@@ -300,11 +344,37 @@ end
 
 local guideHighlight = nil
 local lastGuidePad = nil
+local guideTargetPad = nil
+
+local function setBbEnabled(part, on)
+	if not part then return end
+	local bb = part:FindFirstChildWhichIsA("BillboardGui")
+	if bb then bb.Enabled = on end
+	local p = part:FindFirstChildOfClass("ProximityPrompt")
+	if p then p.Enabled = on end
+end
+
+local function updatePlotVisibility(plotsFolder, myPlot)
+	for _, plot in ipairs(plotsFolder:GetChildren()) do
+		if plot == myPlot then
+			setBbEnabled(plot.ClaimPad, true)
+		else
+			setBbEnabled(plot.Collector, false)
+			setBbEnabled(plot.CashHub, false)
+			local b1 = plot:FindFirstChild("Buttons")
+			if b1 then for _, b in ipairs(b1:GetChildren()) do setBbEnabled(b, false) end end
+			local b2 = plot:FindFirstChild("Buttons2")
+			if b2 then for _, b in ipairs(b2:GetChildren()) do setBbEnabled(b, false) end end
+			setBbEnabled(plot.ClaimPad, myPlot == nil)
+		end
+	end
+end
 
 local function updateGuide()
 	local char = player.Character
 	if not char then
 		guideFrame.Visible = false
+		guideBeam.Enabled = false
 		return
 	end
 	local hrp = char:FindFirstChild("HumanoidRootPart")
@@ -312,14 +382,24 @@ local function updateGuide()
 	local plotsFolder = workspace:FindFirstChild("Plots")
 	if not plotsFolder then return end
 
+	local myPlot = nil
 	for _, m in ipairs(plotsFolder:GetChildren()) do
 		if m:GetAttribute("OwnerUserId") == player.UserId then
-			if guideFrame.Visible then guideFrame.Visible = false end
-			if guideHighlight then guideHighlight:Destroy() guideHighlight = nil end
-			lastGuidePad = nil
-			hint.Text = "💎 Build your empire! Next upgrade shown above."
-			return
+			myPlot = m
+			break
 		end
+	end
+
+	updatePlotVisibility(plotsFolder, myPlot)
+
+	if myPlot then
+		guideFrame.Visible = false
+		guideBeam.Enabled = false
+		guideTargetPad = nil
+		if guideHighlight then guideHighlight:Destroy() guideHighlight = nil end
+		lastGuidePad = nil
+		hint.Text = "💎 Build your empire! Buy the next upgrade above."
+		return
 	end
 
 	local nearestPad, minDist, nearestName = nil, math.huge, ""
@@ -341,8 +421,11 @@ local function updateGuide()
 	if nearestPad then
 		guideFrame.Visible = true
 		local dist = math.floor(minDist)
-		guideLabel.Text = "➤ Nearest Free Plot: " .. dist .. "m (" .. nearestName .. ")"
-		hint.Text = "→ Follow the green marker to claim your plot!"
+		guideLabel.Text = "➤ Free Plot: " .. nearestName .. "  (" .. dist .. "m)"
+		hint.Text = "→ Follow the glowing green path to claim your plot!"
+		guideTargetPad = nearestPad
+		guideTarget.CFrame = nearestPad.CFrame * CFrame.new(0, 2.5, 0)
+		guideBeam.Enabled = true
 		if lastGuidePad ~= nearestPad then
 			if guideHighlight then guideHighlight:Destroy() end
 			lastGuidePad = nearestPad
@@ -350,7 +433,7 @@ local function updateGuide()
 			hl.Adornee = nearestPad
 			hl.FillColor = Color3.fromRGB(0, 255, 140)
 			hl.OutlineColor = Color3.fromRGB(255, 255, 255)
-			hl.FillTransparency = 0.6
+			hl.FillTransparency = 0.55
 			hl.OutlineTransparency = 0
 			hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
 			hl.Parent = nearestPad
@@ -371,6 +454,8 @@ local function updateGuide()
 		end
 	else
 		guideFrame.Visible = false
+		guideBeam.Enabled = false
+		guideTargetPad = nil
 		if guideHighlight then guideHighlight:Destroy() guideHighlight = nil end
 		guideLabel.Text = "All plots claimed!"
 	end
@@ -387,6 +472,16 @@ task.spawn(function()
 	while true do
 		updateGuide()
 		task.wait(0.25)
+	end
+end)
+
+local RunService = game:GetService("RunService")
+RunService.Heartbeat:Connect(function()
+	if guideBeam.Enabled and guideTargetPad and player.Character then
+		local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+		if hrp then
+			guideFollow.CFrame = hrp.CFrame * CFrame.new(0, 1.5, 0)
+		end
 	end
 end)
 

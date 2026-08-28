@@ -579,7 +579,7 @@ function PlotBuilder.Build(index, origin, yaw)
 		Color = Color3.fromRGB(255, 200, 50),
 		Material = Enum.Material.Neon,
 	}, model)
-	attachBillboard(hub, "COLLECT\n$0", 120, 44, 3.5, Color3.fromRGB(40, 32, 10))
+	attachBillboard(hub, "DEPOSIT ORE", 120, 44, 3.5, Color3.fromRGB(40, 32, 10))
 	makeEmitter(hub, ColorSequence.new(Color3.fromRGB(255, 220, 80)), 0.9, 14, 0.9, "CashBurst")
 
 	local cashSound = Instance.new("Sound")
@@ -595,6 +595,61 @@ function PlotBuilder.Build(index, origin, yaw)
 	hubLight.Parent = hub
 
 	makePart({ Name = "Vault", Size = Vector3.new(4, 3.5, 3), CFrame = base * CFrame.new(6.5, 1.75, -FZ / 2 - 4.75), Color = Color3.fromRGB(40, 42, 50), Material = Enum.Material.Metal }, model)
+
+	makePart({ Name = "CashPost", Size = Vector3.new(0.45, 1.3, 0.45), CFrame = base * CFrame.new(6.5, 3.7, -FZ / 2 - 3), Color = Color3.fromRGB(60, 64, 74), Material = Enum.Material.Metal }, model)
+	local screen = makePart({
+		Name = "CashScreen",
+		Size = Vector3.new(3.8, 3.0, 0.25),
+		CFrame = base * CFrame.new(6.5, 4.6, -FZ / 2 - 3),
+		Color = Color3.fromRGB(12, 16, 22),
+		Material = Enum.Material.SmoothPlastic,
+	}, model)
+	local sg = Instance.new("SurfaceGui")
+	sg.Face = Enum.NormalId.Back
+	sg.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+	sg.PixelsPerStud = 55
+	sg.Parent = screen
+	local bg = Instance.new("Frame")
+	bg.Size = UDim2.fromScale(1, 1)
+	bg.BackgroundColor3 = Color3.fromRGB(8, 12, 18)
+	bg.BorderSizePixel = 0
+	bg.Parent = sg
+	local bgCorner = Instance.new("UICorner")
+	bgCorner.CornerRadius = UDim.new(0.04, 0)
+	bgCorner.Parent = bg
+	local bgStroke = Instance.new("UIStroke")
+	bgStroke.Color = Color3.fromRGB(255, 200, 70)
+	bgStroke.Thickness = 0.05
+	bgStroke.Parent = bg
+	local header = Instance.new("TextLabel")
+	header.Size = UDim2.new(1, 0, 0.2, 0)
+	header.Position = UDim2.new(0, 0, 0.06, 0)
+	header.BackgroundTransparency = 1
+	header.Font = Enum.Font.GothamBold
+	header.TextScaled = true
+	header.TextColor3 = Color3.fromRGB(255, 200, 80)
+	header.Text = "CASH VAULT"
+	header.Parent = sg
+	local amount = Instance.new("TextLabel")
+	amount.Name = "CashText"
+	amount.Size = UDim2.new(1, 0, 0.5, 0)
+	amount.Position = UDim2.new(0, 0, 0.27, 0)
+	amount.BackgroundTransparency = 1
+	amount.Font = Enum.Font.GothamBlack
+	amount.TextScaled = true
+	amount.TextColor3 = Color3.fromRGB(120, 255, 165)
+	amount.Text = "$0"
+	amount.Parent = sg
+	local status = Instance.new("TextLabel")
+	status.Name = "CashStatus"
+	status.Size = UDim2.new(1, 0, 0.2, 0)
+	status.Position = UDim2.new(0, 0, 0.78, 0)
+	status.BackgroundTransparency = 1
+	status.Font = Enum.Font.Gotham
+	status.TextScaled = true
+	status.TextColor3 = Color3.fromRGB(160, 180, 200)
+	status.Text = "AWAITING DEPOSITS"
+	status.Parent = sg
 
 	local beltDir = base:VectorToWorldSpace(Vector3.new(0, 0, 1))
 	model:SetAttribute("BeltDir", beltDir)

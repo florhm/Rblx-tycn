@@ -329,7 +329,24 @@ function Tycoon:_updateHub()
 	if bb then
 		local label = bb:FindFirstChildWhichIsA("TextLabel", true)
 		if label then
-			label.Text = "COLLECT\n$" .. self:_formatNumber(self.PendingCash)
+			label.Text = self.PendingCash > 0 and ("COLLECT\n$" .. self:_formatNumber(self.PendingCash)) or "DEPOSIT ORE"
+		end
+	end
+	local screen = self.Model:FindFirstChild("CashScreen")
+	if screen then
+		local amt = screen:FindFirstChild("CashText", true)
+		local st = screen:FindFirstChild("CashStatus", true)
+		if amt then
+			amt.Text = "$" .. self:_formatNumber(self.PendingCash)
+		end
+		if st then
+			if self.PendingCash > 0 then
+				st.Text = "WALK IN TO COLLECT"
+				st.TextColor3 = Color3.fromRGB(255, 220, 90)
+			else
+				st.Text = "AWAITING DEPOSITS"
+				st.TextColor3 = Color3.fromRGB(150, 170, 190)
+			end
 		end
 	end
 end

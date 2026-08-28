@@ -18,6 +18,9 @@ function Tycoon.new(plotModel, claimHandler)
 	self.OwnedWeapons = {}
 	self.PendingCash = 0
 	self.ItemMultiplier = Config.ValueMultiplierTiers[1]
+	self.Prestige = 0
+	self.PrestigeMult = 1
+	self.ManagerHired = false
 	self.OnClaimRequested = claimHandler
 	self._connections = {}
 	self._lastShot = {}
@@ -78,6 +81,13 @@ function Tycoon:_setup()
 		self:_collect(hit, model.Locked.StairGroup.Collector2)
 	end))
 
+	local stairGroup2 = model.Locked:FindFirstChild("StairGroup2")
+	if stairGroup2 and stairGroup2:FindFirstChild("Collector3") then
+		table.insert(self._connections, stairGroup2.Collector3.Touched:Connect(function(hit)
+			self:_collect(hit, stairGroup2.Collector3)
+		end))
+	end
+
 	table.insert(self._connections, model.Locked.LaserGroup.Beam.Touched:Connect(function(hit)
 		self:_onLaserTouch(hit)
 	end))
@@ -89,7 +99,7 @@ function Tycoon:_setup()
 		self:_onHubTouch(hit)
 	end))
 
-	for _, folder in ipairs({ model.Buttons, model.Buttons2 }) do
+	for _, folder in ipairs({ model.Buttons, model.Buttons2, model.Buttons3 }) do
 		for _, btn in ipairs(folder:GetChildren()) do
 			table.insert(self._connections, btn.Touched:Connect(function(hit)
 				local player = Players:GetPlayerFromCharacter(hit.Parent)
@@ -180,7 +190,7 @@ function Tycoon:_updateWayfinder()
 	end
 
 	local best, bestCost = nil, math.huge
-	for _, folder in ipairs({ self.Model.Buttons, self.Model.Buttons2 }) do
+	for _, folder in ipairs({ self.Model.Buttons, self.Model.Buttons2, self.Model.Buttons3 }) do
 		for _, btn in ipairs(folder:GetChildren()) do
 			local id = btn:GetAttribute("Id")
 			if not self.Purchased[id] then
@@ -237,7 +247,7 @@ function Tycoon:_collect(hit, collectorPart)
 	end
 	self._lastSellTime = now
 
-	local paid = math.floor(value * self.ItemMultiplier)
+	local paid = math.floor(value * self.ItemMultiplier * self.PrestigeMult)
 	self.PendingCash += paid
 	self:_updateHub()
 	self:_sellPopup(collectorPart, paid, color, self._comboCount)
@@ -338,9 +348,9 @@ function Tycoon:_spawnCoinShower(hubPart)
 	end
 end
 
-function Tycoon:_onHubTouch(hit)
-	local player = Players:GetPlayerFromCharacter(hit.Parent)
-	if not player or player ~= self.Owner then
+function Tycoon:_collectHub()
+	local player = self.Owner
+	if not player then
 		return
 	end
 	if self.PendingCash <= 0 then
@@ -372,6 +382,25 @@ function Tycoon:_onHubTouch(hit)
 	if amount >= 2000 then
 		self:_fireJuice(player, "FOV", 1)
 	end
+end
+
+function Tycoon:_onHubTouch(hit)
+	local player = Players:GetPlayerFromCharacter(hit.Parent)
+	if not player or player ~= self.Owner then
+		return
+	end
+	self:_collectHub()
+end
+
+function Tycoon:_startManager()
+	task.spawn(function()
+		while self.ManagerHired and self.Owner and self.Model.Parent do
+			task.wait(1.2)
+			if self.PendingCash > 0 then
+				self:_collectHub()
+			end
+		end
+	end)
 end
 
 function Tycoon:_onLaserTouch(hit)
@@ -411,15 +440,19 @@ function Tycoon:_applyBeltTier(tier)
 	if stairGroup then
 		table.insert(belts, stairGroup.Belt2)
 	end
+	local stairGroup2 = self.Model.Locked:FindFirstChild("StairGroup2")
+	if stairGroup2 then
+		table.insert(belts, stairGroup2.Belt3)
+	end
 	local dir = self.Model:GetAttribute("BeltDir") or Vector3.new(0, 0, 1)
 	for _, belt in ipairs(belts) do
-		belt.Velocity = dir * Config.Belt.SpeedTiers[tier]
-		belt.Color = Config.Belt.Colors[tier]
+		belt.Velocity = dir * (Config.Belt.SpeedTiers[tier] or Config.Belt.SpeedTiers[1])
+		belt.Color = Config.Belt.Colors[tier] or Color3.fromRGB(180, 90, 255)
 	end
 end
 
 function Tycoon:_refreshButtons()
-	for _, folder in ipairs({ self.Model.Buttons, self.Model.Buttons2 }) do
+	for _, folder in ipairs({ self.Model.Buttons, self.Model.Buttons2, self.Model.Buttons3 }) do
 		for _, btn in ipairs(folder:GetChildren()) do
 			local id = btn:GetAttribute("Id")
 			if not self.Owner then
@@ -456,7 +489,12 @@ function Tycoon:_tryPurchase(btn, player)
 
 	cash.Value -= cost
 	self.Purchased[id] = true
-	self:_applyPurchase(btn:GetAttribute("Kind"), btn:GetAttribute("Target"))
+	local ok, err = pcall(function()
+		self:_applyPurchase(btn:GetAttribute("Kind"), btn:GetAttribute("Target"))
+	end)
+	if not ok then
+		warn("[Tycoon] purchase effect failed for " .. tostring(id) .. ": " .. tostring(err))
+	end
 	self:_juice(btn)
 	PlotBuilder.SetVisible(btn, false)
 	self:_refreshButtons()
@@ -604,6 +642,8 @@ function Tycoon:_applyPurchase(kind, target)
 		PlotBuilder.SetVisible(self.Model.Locked["Wall_" .. target], true)
 	elseif kind == "Stairs" then
 		PlotBuilder.SetVisible(self.Model.Locked.StairGroup, true)
+	elseif kind == "Floor3" then
+		PlotBuilder.SetVisible(self.Model.Locked.StairGroup2, true)
 	elseif kind == "Laser" then
 		PlotBuilder.SetVisible(self.Model.Locked.LaserGroup, true)
 	elseif kind == "Weapon" then
@@ -611,6 +651,8 @@ function Tycoon:_applyPurchase(kind, target)
 		if self.Owner then
 			self:_giveWeapon(self.Owner, target)
 		end
+	elseif kind == "Decor" then
+		PlotBuilder.ApplyDecor(self.Model, target)
 	elseif kind == "Complete" then
 		if target == "2" then
 			PlotBuilder.SetVisible(self.Model.Locked.CompleteSign2, true)
@@ -620,6 +662,15 @@ function Tycoon:_applyPurchase(kind, target)
 			if self.Owner then
 				self:_announce(self.Owner.DisplayName .. " just unlocked EMPIRE COMPLETE! [LEGENDARY]", Color3.fromRGB(255,60,90))
 				self:_givePrestige(self.Owner, "EMPIRE LEGEND", Color3.fromRGB(255,60,90))
+			end
+		elseif target == "3" then
+			PlotBuilder.SetVisible(self.Model.Locked.CompleteSign3, true)
+			local sign = self.Model.Locked:FindFirstChild("CompleteSign3")
+			local pos = sign and sign:GetBoundingBox()
+			self:_bigReveal(pos and pos.Position or self.Model.Floor.Position + Vector3.new(0,30,0), Color3.fromRGB(255, 220, 60))
+			if self.Owner then
+				self:_announce(self.Owner.DisplayName .. " just achieved GALAXY DOMINATION! [MYTHIC]", Color3.fromRGB(255, 220, 60))
+				self:_givePrestige(self.Owner, "GALAXY RULER", Color3.fromRGB(255, 220, 60))
 			end
 		else
 			PlotBuilder.SetVisible(self.Model.Locked.CompleteSign1, true)
@@ -631,7 +682,68 @@ function Tycoon:_applyPurchase(kind, target)
 				self:_givePrestige(self.Owner, "TYCOON MASTER", Color3.fromRGB(255,220,60))
 			end
 		end
+	elseif kind == "Manager" then
+		self.ManagerHired = true
+		self:_startManager()
+		self:_announce(self.Owner.DisplayName .. " hired a Manager — Auto-Collect ON", Color3.fromRGB(0,255,140))
+	elseif kind == "Prestige" then
+		self:_doPrestige(self.Owner)
 	end
+end
+
+function Tycoon:_doPrestige(player)
+	if not player then
+		return
+	end
+	self.Prestige = (self.Prestige or 0) + 1
+	self.PrestigeMult = 1 + 0.25 * self.Prestige
+	self:_softReset(player)
+	PlotBuilder.ScaleMonument(self.Model, self.Prestige)
+
+	local ps = player:FindFirstChild("leaderstats")
+	if ps and ps:FindFirstChild("Prestige") then
+		ps.Prestige.Value = self.Prestige
+	end
+
+	self:_fireJuiceAll("LevelUp", 1)
+	self:_announce(player.DisplayName .. " prestiged to Lv " .. self.Prestige .. "! Income x" .. self.PrestigeMult, Color3.fromRGB(255, 220, 80))
+	self:_bigReveal(self.Model.Floor.Position + Vector3.new(0, 12, 0), Color3.fromRGB(255, 220, 80))
+	self:_givePrestige(player, "PRESTIGE Lv " .. self.Prestige .. " (x" .. self.PrestigeMult .. ")", Color3.fromRGB(255, 220, 80))
+	local ev = ReplicatedStorage:FindFirstChild("JuiceEvent")
+	if ev then
+		ev:FireClient(player, "Announce", "PRESTIGE Lv " .. self.Prestige .. " — Income x" .. self.PrestigeMult)
+	end
+end
+
+function Tycoon:_softReset(player)
+	self:_revokeWeapons(self.Owner)
+	self.Purchased = {}
+	table.clear(self.OwnedWeapons)
+	table.clear(self.ActiveDroppers)
+	self.ItemMultiplier = Config.ValueMultiplierTiers[1]
+	self.PendingCash = 0
+	self._comboCount = 0
+	self._lastSellTime = 0
+	self.ManagerHired = false
+	self:_applyBeltTier(1)
+
+	local green = Color3.fromRGB(90, 230, 110)
+	self.Model.Collector.Color = green
+	self.Model.Locked.StairGroup.Collector2.Color = green
+
+	for _, locked in ipairs(self.Model.Locked:GetChildren()) do
+		PlotBuilder.SetVisible(locked, false)
+	end
+	for _, item in ipairs(self.Model:GetChildren()) do
+		if item.Name == "CashItem" then
+			item:Destroy()
+		end
+	end
+
+	PlotBuilder.SetVisible(self.Model.Locked["Dropper_Dirt"], true)
+	self:_activateDropper("Dirt")
+	self:_updateHub()
+	self:_refreshButtons()
 end
 
 function Tycoon:_activateDropper(id)
@@ -639,7 +751,7 @@ function Tycoon:_activateDropper(id)
 		return
 	end
 	self.ActiveDroppers[id] = true
-	local cfg = Config.Droppers[id] or Config.Floor2Droppers[id]
+	local cfg = Config.Droppers[id] or Config.Floor2Droppers[id] or Config.Floor3Droppers[id]
 	task.spawn(function()
 		while self.ActiveDroppers[id] and self.Model.Parent do
 			if self.Owner then
@@ -703,6 +815,19 @@ function Tycoon:_spawnItem(id, cfg)
 
 	item.Parent = self.Model
 	Debris:AddItem(item, 30)
+
+	local beltDirV = self.Model:GetAttribute("BeltDir")
+	if beltDirV then
+		local speed = Config.Belt.SpeedTiers[1]
+		task.spawn(function()
+			local life = 0
+			while item and item.Parent and life < 5 do
+				item.AssemblyLinearVelocity = beltDirV * speed
+				task.wait(0.1)
+				life += 0.1
+			end
+		end)
+	end
 end
 
 function Tycoon:_giveWeapon(player, wid)
@@ -884,6 +1009,9 @@ function Tycoon:Reset()
 	self.PendingCash = 0
 	self._comboCount = 0
 	self._lastSellTime = 0
+	self.Prestige = 0
+	self.PrestigeMult = 1
+	self.ManagerHired = false
 	self:_applyBeltTier(1)
 	local green = Color3.fromRGB(90, 230, 110)
 	self.Model.Collector.Color = green
@@ -895,6 +1023,15 @@ function Tycoon:Reset()
 		if item.Name == "CashItem" then
 			item:Destroy()
 		end
+	end
+	for _, decor in ipairs(self.Model:GetChildren()) do
+		if decor:GetAttribute("Decor") then
+			decor:Destroy()
+		end
+	end
+	local monument = self.Model:FindFirstChild("Monument")
+	if monument then
+		PlotBuilder.SetVisible(monument, false)
 	end
 	self.Owner = nil
 	self.Model:SetAttribute("OwnerUserId", 0)

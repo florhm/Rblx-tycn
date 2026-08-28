@@ -202,6 +202,10 @@ local function onPlayerAdded(player)
 		cash.Name = "Cash"
 		cash.Value = Config.StartingCash
 		cash.Parent = stats
+		local prestige = Instance.new("IntValue")
+		prestige.Name = "Prestige"
+		prestige.Value = 0
+		prestige.Parent = stats
 		stats.Parent = player
 	end
 	player.CharacterAdded:Connect(function(char)

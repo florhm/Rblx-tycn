@@ -37,6 +37,18 @@ label.TextSize = 26
 label.Text = "$0"
 label.Parent = frame
 
+local prestigeLabel = Instance.new("TextLabel")
+prestigeLabel.Size = UDim2.fromOffset(220, 18)
+prestigeLabel.Position = UDim2.new(1, -16, 0, 72)
+prestigeLabel.AnchorPoint = Vector2.new(1, 0)
+prestigeLabel.BackgroundTransparency = 1
+prestigeLabel.Font = Enum.Font.GothamBold
+prestigeLabel.TextColor3 = Color3.fromRGB(255, 215, 80)
+prestigeLabel.TextSize = 14
+prestigeLabel.TextXAlignment = Enum.TextXAlignment.Right
+prestigeLabel.Text = ""
+prestigeLabel.Parent = screenGui
+
 local gradient = Instance.new("UIGradient")
 gradient.Color = ColorSequence.new({
 	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 230, 120)),
@@ -279,12 +291,18 @@ end)
 
 local stats = player:WaitForChild("leaderstats")
 local cash = stats:WaitForChild("Cash")
+local prestige = stats:WaitForChild("Prestige")
 
 local lastCash = cash.Value
 
 local function update()
 	local current = cash.Value
 	label.Text = "$" .. formatNumber(current)
+	if prestige and prestige.Value > 0 then
+		prestigeLabel.Text = "Prestige Lv " .. prestige.Value .. "  (x" .. (1 + 0.25 * prestige.Value) .. " income)"
+	else
+		prestigeLabel.Text = ""
+	end
 
 	if current ~= lastCash then
 		lastCash = current
@@ -311,7 +329,7 @@ local function updateProgress()
 		return
 	end
 	local bestName, bestCost = nil, math.huge
-	for _, folderName in ipairs({"Buttons","Buttons2"}) do
+	for _, folderName in ipairs({"Buttons","Buttons2","Buttons3"}) do
 		local folder = myPlot:FindFirstChild(folderName)
 		if folder then
 			for _, btn in ipairs(folder:GetChildren()) do
@@ -328,13 +346,18 @@ local function updateProgress()
 	if bestName and bestCost ~= math.huge then
 		local cashVal = cash.Value
 		local pct = math.clamp(cashVal / bestCost, 0, 1)
-		progressLabel.Text = "Next: " .. bestName .. " $" .. formatNumber(bestCost) .. " (" .. math.floor(pct*100) .. "%)"
-		TweenService:Create(progressBar, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = UDim2.new(pct, 0, 1, 0) }):Play()
-		if pct >= 1 then
-			progressBar.BackgroundColor3 = Color3.fromRGB(90, 255, 140)
+		if bestName == "Prestige" then
+			progressLabel.Text = "★ PRESTIGE READY! $" .. formatNumber(bestCost) .. " (" .. math.floor(pct*100) .. "%)"
+			progressBar.BackgroundColor3 = Color3.fromRGB(255, 215, 80)
 		else
-			progressBar.BackgroundColor3 = Color3.fromRGB(0, 220, 140)
+			progressLabel.Text = "Next: " .. bestName .. " $" .. formatNumber(bestCost) .. " (" .. math.floor(pct*100) .. "%)"
+			if pct >= 1 then
+				progressBar.BackgroundColor3 = Color3.fromRGB(90, 255, 140)
+			else
+				progressBar.BackgroundColor3 = Color3.fromRGB(0, 220, 140)
+			end
 		end
+		TweenService:Create(progressBar, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = UDim2.new(pct, 0, 1, 0) }):Play()
 	else
 		progressLabel.Text = "MAXED - Empire Complete!"
 		TweenService:Create(progressBar, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = UDim2.new(1, 0, 1, 0) }):Play()
@@ -357,15 +380,17 @@ end
 local function updatePlotVisibility(plotsFolder, myPlot)
 	for _, plot in ipairs(plotsFolder:GetChildren()) do
 		if plot == myPlot then
-			setBbEnabled(plot.ClaimPad, true)
+			setBbEnabled(plot:FindFirstChild("ClaimPad"), true)
 		else
-			setBbEnabled(plot.Collector, false)
-			setBbEnabled(plot.CashHub, false)
+			setBbEnabled(plot:FindFirstChild("Collector"), false)
+			setBbEnabled(plot:FindFirstChild("CashHub"), false)
 			local b1 = plot:FindFirstChild("Buttons")
 			if b1 then for _, b in ipairs(b1:GetChildren()) do setBbEnabled(b, false) end end
 			local b2 = plot:FindFirstChild("Buttons2")
 			if b2 then for _, b in ipairs(b2:GetChildren()) do setBbEnabled(b, false) end end
-			setBbEnabled(plot.ClaimPad, myPlot == nil)
+			local b3 = plot:FindFirstChild("Buttons3")
+			if b3 then for _, b in ipairs(b3:GetChildren()) do setBbEnabled(b, false) end end
+			setBbEnabled(plot:FindFirstChild("ClaimPad"), myPlot == nil)
 		end
 	end
 end

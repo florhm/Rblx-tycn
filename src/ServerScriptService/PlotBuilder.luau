@@ -326,6 +326,122 @@ local function buildSign(name, text, cf, parent)
 	return m
 end
 
+local function buildStairsAndFloor3(accent, base, beltDir, parent)
+	local m = Instance.new("Model")
+	m.Name = "StairGroup2"
+
+	for i = 1, 10 do
+		local stepH = 1.2 * i
+		makePart({
+			Name = "Step" .. i,
+			Size = Vector3.new(5.5, stepH, 2),
+			CFrame = base * CFrame.new(41.5, stepH / 2, -25 + (i - 1) * 2),
+			Color = Color3.fromRGB(70, 74, 84),
+			Material = Enum.Material.Slate,
+		}, m)
+	end
+
+	local slabColor = Color3.fromRGB(48, 50, 58)
+	makePart({ Name = "Slab1", Size = Vector3.new(FX, 2, 9), CFrame = base * CFrame.new(0, 25, -30.5), Color = slabColor, Material = Enum.Material.Slate }, m)
+	makePart({ Name = "Slab2", Size = Vector3.new(FX - 7, 2, 20), CFrame = base * CFrame.new(3.5, 25, -16), Color = slabColor, Material = Enum.Material.Slate }, m)
+	makePart({ Name = "Slab3", Size = Vector3.new(FX, 2, 41), CFrame = base * CFrame.new(0, 25, 14.5), Color = slabColor, Material = Enum.Material.Slate }, m)
+
+	local railColor = Color3.fromRGB(220, 225, 235)
+	makePart({ Name = "HoleRail1", Size = Vector3.new(0.4, 3, 20), CFrame = base * CFrame.new(38, 27.5, -16), Color = railColor, Material = Enum.Material.Glass, Transparency = 0.5 }, m)
+	makePart({ Name = "HoleRail2", Size = Vector3.new(7, 3, 0.4), CFrame = base * CFrame.new(41.5, 27.5, -26), Color = railColor, Material = Enum.Material.Glass, Transparency = 0.5 }, m)
+	makePart({ Name = "HoleRail3", Size = Vector3.new(7, 3, 0.4), CFrame = base * CFrame.new(41.5, 27.5, -6), Color = railColor, Material = Enum.Material.Glass, Transparency = 0.5 }, m)
+
+	local belt3 = makePart({ Name = "Belt3", Size = Vector3.new(4, 0.6, 30), CFrame = base * CFrame.new(0, 26.3, -2), Color = Config.Belt.Colors[1], Material = Enum.Material.DiamondPlate }, m)
+	belt3.Velocity = beltDir * Config.Belt.SpeedTiers[1]
+
+	for _, sx in ipairs({ -2.25, 2.25 }) do
+		makePart({ Name = "Rail3", Size = Vector3.new(0.5, 1.4, 30), CFrame = base * CFrame.new(sx, 26.7, -2), Color = railColor, Material = Enum.Material.Glass, Transparency = 0.6 }, m)
+	end
+
+	local collector3 = makePart({ Name = "Collector3", Size = Vector3.new(6, 1, 4), CFrame = base * CFrame.new(0, 25.9, 15), Color = Color3.fromRGB(90, 230, 110), Material = Enum.Material.Neon }, m)
+	attachBillboard(collector3, "SELL ORE", 90, 28, 1.8, Color3.fromRGB(20, 40, 25))
+	makeEmitter(collector3, ColorSequence.new(Color3.fromRGB(120, 255, 150)), 0.6, 10, 0.5, "SellBurst")
+	attachSound(collector3, "SellSound", "rbxasset://sounds/electronicpingshort.wav", 1.1)
+
+	m.Parent = parent
+	return m
+end
+
+local function buildMonument(model)
+	local m = Instance.new("Model")
+	m.Name = "Monument"
+	local base = model.Floor.CFrame * CFrame.new(0, 1, 0)
+	local mb = base * CFrame.new(0, 0, -Config.Layout.FloorSize.Z / 2 - 9)
+	makePart({ Name = "Pedestal", Size = Vector3.new(7, 2, 7), CFrame = mb * CFrame.new(0, 1, 0), Color = Color3.fromRGB(40, 42, 50), Material = Enum.Material.Metal }, m)
+	makePart({ Name = "Spire", Size = Vector3.new(2, 10, 2), CFrame = mb * CFrame.new(0, 6, 0), Color = Color3.fromRGB(180, 90, 255), Material = Enum.Material.Neon }, m)
+	local orb = makePart({ Name = "Orb", Shape = Enum.PartType.Ball, Size = Vector3.new(4, 4, 4), CFrame = mb * CFrame.new(0, 12, 0), Color = Color3.fromRGB(255, 220, 120), Material = Enum.Material.Neon }, m)
+	local light = Instance.new("PointLight")
+	light.Color = Color3.fromRGB(255, 210, 90)
+	light.Range = 30
+	light.Brightness = 3
+	light.Parent = orb
+	makeEmitter(orb, ColorSequence.new(Color3.fromRGB(255, 220, 120)), 1.2, 20, 0.6, "MonBurst")
+	m.Parent = model
+	PlotBuilder.SetVisible(m, false)
+	return m
+end
+
+function PlotBuilder.ScaleMonument(model, level)
+	local m = model:FindFirstChild("Monument")
+	if not m then
+		return
+	end
+	PlotBuilder.SetVisible(m, true)
+	local base = model.Floor.CFrame * CFrame.new(0, 1, 0)
+	local mb = base * CFrame.new(0, 0, -Config.Layout.FloorSize.Z / 2 - 9)
+	local scale = 1 + 0.6 * (level - 1)
+	local spire = m:FindFirstChild("Spire")
+	if spire then
+		spire.Size = Vector3.new(2 * scale, 10 * scale, 2 * scale)
+		spire.CFrame = mb * CFrame.new(0, 1 + 5 * scale, 0)
+	end
+	local orb = m:FindFirstChild("Orb")
+	if orb then
+		orb.Size = Vector3.new(4 * scale, 4 * scale, 4 * scale)
+		orb.CFrame = mb * CFrame.new(0, 2 + 10 * scale, 0)
+	end
+end
+
+function PlotBuilder.ApplyDecor(model, id)
+	if model:FindFirstChild("Decor_" .. id) then
+		return
+	end
+	local d = Instance.new("Model")
+	d.Name = "Decor_" .. id
+	d:SetAttribute("Decor", true)
+	local base = model.Floor.CFrame * CFrame.new(0, 1, 0)
+
+	if id == "Garden" then
+		local flowerCols = { Color3.fromRGB(255, 90, 140), Color3.fromRGB(255, 200, 60), Color3.fromRGB(120, 180, 255), Color3.fromRGB(200, 120, 255) }
+		for i = 1, 10 do
+			local ang = (i / 10) * math.pi * 2
+			local r = 40
+			local x = math.cos(ang) * r
+			local z = math.sin(ang) * (Config.Layout.FloorSize.Z / 2 - 4)
+			local stem = makePart({ Name = "Stem", Shape = Enum.PartType.Cylinder, Size = Vector3.new(3, 0.4, 0.4), CFrame = base * CFrame.new(x, 1.5, z) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(60, 140, 60), Material = Enum.Material.Grass }, d)
+			local col = flowerCols[(i % #flowerCols) + 1]
+			makePart({ Name = "Bloom", Shape = Enum.PartType.Ball, Size = Vector3.new(2, 2, 2), CFrame = base * CFrame.new(x, 3.2, z), Color = col, Material = Enum.Material.Neon }, d)
+		end
+	elseif id == "Statue" then
+		local pos = base * CFrame.new(0, 0, Config.Layout.FloorSize.Z / 2 - 10)
+		makePart({ Name = "Pedestal", Size = Vector3.new(5, 3, 5), CFrame = pos * CFrame.new(0, 1.5, 0), Color = Color3.fromRGB(60, 60, 70), Material = Enum.Material.Metal }, d)
+		makePart({ Name = "Figure", Size = Vector3.new(3, 8, 3), CFrame = pos * CFrame.new(0, 7, 0), Color = Color3.fromRGB(255, 200, 60), Material = Enum.Material.Metal }, d)
+		local orb = makePart({ Name = "Crown", Shape = Enum.PartType.Ball, Size = Vector3.new(2.4, 2.4, 2.4), CFrame = pos * CFrame.new(0, 12, 0), Color = Color3.fromRGB(255, 230, 120), Material = Enum.Material.Neon }, d)
+		local light = Instance.new("PointLight")
+		light.Color = Color3.fromRGB(255, 220, 100)
+		light.Range = 22
+		light.Brightness = 2
+		light.Parent = orb
+	end
+
+	d.Parent = model
+end
+
 local function buildButtons(folder, defs, cols, rows, yBase, accent, base)
 	for _, def in ipairs(defs) do
 		local col = (def.Slot - 1) % #cols
@@ -445,7 +561,7 @@ function PlotBuilder.Build(index, origin, yaw)
 		{ Vector3.new(1, 0.4, FZ), Vector3.new(FX / 2 - 0.5, 0.2, 0) },
 		{ Vector3.new(1, 0.4, FZ), Vector3.new(-FX / 2 + 0.5, 0.2, 0) },
 	}) do
-		makePart({ Name = "Trim", Size = trim[1], CFrame = base * CFrame.new(trim[2]), Color = accent, Material = Enum.Material.Neon }, model)
+		makePart({ Name = "Trim", Size = trim[1], CFrame = base * CFrame.new(trim[2]), Color = accent, Material = Enum.Material.SmoothPlastic }, model)
 	end
 
 	makePart({ Name = "Porch", Size = Vector3.new(26, 2, 6), CFrame = base * CFrame.new(0, -1, -FZ / 2 - 3), Color = Color3.fromRGB(45, 47, 53), Material = Enum.Material.Slate }, model)
@@ -502,6 +618,7 @@ function PlotBuilder.Build(index, origin, yaw)
 
 	buildWalls(accent, base, locked)
 	buildStairsAndFloor2(accent, base, beltDir, locked)
+	buildStairsAndFloor3(accent, base, beltDir, locked)
 	buildLaser(base, locked)
 
 	for id, cfg in pairs(Config.Droppers) do
@@ -510,9 +627,15 @@ function PlotBuilder.Build(index, origin, yaw)
 	for id, cfg in pairs(Config.Floor2Droppers) do
 		buildDropper(id, cfg, accent, locked, base, 14)
 	end
+	if Config.Floor3Droppers then
+		for id, cfg in pairs(Config.Floor3Droppers) do
+			buildDropper(id, cfg, accent, locked, base, 24)
+		end
+	end
 
 	buildSign("CompleteSign1", "TYCOON COMPLETE!", base * CFrame.new(0, 10, FZ / 2 - 1.75), locked)
 	buildSign("CompleteSign2", "EMPIRE COMPLETE!", base * CFrame.new(0, 20, FZ / 2 - 1.75), locked)
+	buildSign("CompleteSign3", "GALAXY DOMINATED!", base * CFrame.new(0, 30, FZ / 2 - 1.75), locked)
 
 	local buttons = Instance.new("Folder")
 	buttons.Name = "Buttons"
@@ -520,10 +643,15 @@ function PlotBuilder.Build(index, origin, yaw)
 	local buttons2 = Instance.new("Folder")
 	buttons2.Name = "Buttons2"
 	buttons2.Parent = model
+	local buttons3 = Instance.new("Folder")
+	buttons3.Name = "Buttons3"
+	buttons3.Parent = model
 
-	local groundDefs, floor2Defs = {}, {}
+	local groundDefs, floor2Defs, floor3Defs = {}, {}, {}
 	for _, def in ipairs(Config.Buttons) do
-		if def.Floor2 then
+		if def.Floor3 then
+			table.insert(floor3Defs, def)
+		elseif def.Floor2 then
 			table.insert(floor2Defs, def)
 		else
 			table.insert(groundDefs, def)
@@ -531,6 +659,9 @@ function PlotBuilder.Build(index, origin, yaw)
 	end
 	buildButtons(buttons, groundDefs, L.GroundButtonCols, L.GroundButtonRows, 0.35, accent, base)
 	buildButtons(buttons2, floor2Defs, L.Floor2ButtonCols, L.Floor2ButtonRows, 14.35, accent, base)
+	buildButtons(buttons3, floor3Defs, L.Floor3ButtonCols, L.Floor3ButtonRows, 24.35, accent, base)
+
+	buildMonument(model)
 
 	return model
 end

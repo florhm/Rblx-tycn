@@ -113,7 +113,7 @@ local function buildCrystalCluster(parent, pos, color)
 		local light = Instance.new("PointLight")
 		light.Color = color or Color3.fromRGB(0, 230, 255)
 		light.Range = 8
-		light.Brightness = 1.2
+		light.Brightness = 0.7
 		light.Parent = crystal
 	end
 	m.Parent = parent
@@ -192,10 +192,10 @@ function WorldBuilder.Build()
 		spawnLoc.Color = Color3.fromRGB(48, 50, 58)
 	end
 	makePart({ Name = "Plaza", Size = Vector3.new(30, 0.4, 30), CFrame = CFrame.new(0, 0.2, 0), Color = Color3.fromRGB(72, 74, 84), Material = Enum.Material.Cobblestone }, decor)
-	makePart({ Name = "PlazaRing", Size = Vector3.new(32, 0.35, 32), CFrame = CFrame.new(0, 0.18, 0), Color = Color3.fromRGB(0, 255, 140), Material = Enum.Material.Neon }, decor)
+	makePart({ Name = "PlazaRing", Size = Vector3.new(32, 0.35, 32), CFrame = CFrame.new(0, 0.18, 0), Color = Color3.fromRGB(0, 190, 120), Material = Enum.Material.SmoothPlastic }, decor)
 
 	local roadCol = Color3.fromRGB(82, 80, 90)
-	local trimCol = Color3.fromRGB(0, 220, 255)
+	local trimCol = Color3.fromRGB(150, 152, 160)
 	local function road(x1, z1, x2, z2, w)
 		local minX, maxX = math.min(x1, x2), math.max(x1, x2)
 		local minZ, maxZ = math.min(z1, z2), math.max(z1, z2)
@@ -205,13 +205,13 @@ function WorldBuilder.Build()
 		if lenX < 0.1 then
 			local c = CFrame.new((x1 + x2) / 2, cy, (z1 + z2) / 2)
 			makePart({ Name = "Path", Size = Vector3.new(w, 0.3, lenZ + w), CFrame = c, Color = roadCol, Material = Enum.Material.Cobblestone }, decor)
-			makePart({ Name = "Trim", Size = Vector3.new(0.4, 0.35, lenZ + w), CFrame = c + Vector3.new(-w / 2 - 0.2, 0, 0), Color = trimCol, Material = Enum.Material.Neon }, decor)
-			makePart({ Name = "Trim", Size = Vector3.new(0.4, 0.35, lenZ + w), CFrame = c + Vector3.new(w / 2 + 0.2, 0, 0), Color = trimCol, Material = Enum.Material.Neon }, decor)
+			makePart({ Name = "Trim", Size = Vector3.new(0.4, 0.35, lenZ + w), CFrame = c + Vector3.new(-w / 2 - 0.2, 0, 0), Color = trimCol, Material = Enum.Material.SmoothPlastic }, decor)
+			makePart({ Name = "Trim", Size = Vector3.new(0.4, 0.35, lenZ + w), CFrame = c + Vector3.new(w / 2 + 0.2, 0, 0), Color = trimCol, Material = Enum.Material.SmoothPlastic }, decor)
 		else
 			local c = CFrame.new((x1 + x2) / 2, cy, (z1 + z2) / 2)
 			makePart({ Name = "Path", Size = Vector3.new(lenX + w, 0.3, w), CFrame = c, Color = roadCol, Material = Enum.Material.Cobblestone }, decor)
-			makePart({ Name = "Trim", Size = Vector3.new(lenX + w, 0.35, 0.4), CFrame = c + Vector3.new(0, 0, -w / 2 - 0.2), Color = trimCol, Material = Enum.Material.Neon }, decor)
-			makePart({ Name = "Trim", Size = Vector3.new(lenX + w, 0.35, 0.4), CFrame = c + Vector3.new(0, 0, w / 2 + 0.2), Color = trimCol, Material = Enum.Material.Neon }, decor)
+			makePart({ Name = "Trim", Size = Vector3.new(lenX + w, 0.35, 0.4), CFrame = c + Vector3.new(0, 0, -w / 2 - 0.2), Color = trimCol, Material = Enum.Material.SmoothPlastic }, decor)
+			makePart({ Name = "Trim", Size = Vector3.new(lenX + w, 0.35, 0.4), CFrame = c + Vector3.new(0, 0, w / 2 + 0.2), Color = trimCol, Material = Enum.Material.SmoothPlastic }, decor)
 		end
 	end
 
@@ -227,7 +227,7 @@ function WorldBuilder.Build()
 	end
 
 	local signBoard = makePart({ Name = "SignBoard", Size = Vector3.new(16, 4.5, 0.8), CFrame = CFrame.new(0, 7.5, -17), Color = Color3.fromRGB(30, 32, 40), Material = Enum.Material.Metal }, decor)
-	makePart({ Name = "SignBoardBorder", Size = Vector3.new(16.4, 4.9, 0.6), CFrame = CFrame.new(0, 7.5, -17), Color = Color3.fromRGB(0, 255, 140), Material = Enum.Material.Neon }, decor)
+	makePart({ Name = "SignBoardBorder", Size = Vector3.new(16.4, 4.9, 0.6), CFrame = CFrame.new(0, 7.5, -17), Color = Color3.fromRGB(60, 62, 70), Material = Enum.Material.Metal }, decor)
 	makePart({ Name = "SignPostL", Size = Vector3.new(0.8, 8, 0.8), CFrame = CFrame.new(-6, 4, -17), Color = Color3.fromRGB(50, 52, 60), Material = Enum.Material.Metal }, decor)
 	makePart({ Name = "SignPostR", Size = Vector3.new(0.8, 8, 0.8), CFrame = CFrame.new(6, 4, -17), Color = Color3.fromRGB(50, 52, 60), Material = Enum.Material.Metal }, decor)
 
@@ -299,8 +299,15 @@ function WorldBuilder.Build()
 			Name = "Mesa",
 			Size = Vector3.new(rng:NextNumber(120, 220), h, rng:NextNumber(100, 180)),
 			CFrame = CFrame.new(x, h / 2 - 3, z) * CFrame.Angles(0, -angle + math.rad(rng:NextNumber(-30, 30)), 0),
-			Color = Color3.fromRGB(44, 46, 54),
+			Color = Color3.fromRGB(150, 96, 64),
 			Material = Enum.Material.Slate,
+		}, decor)
+		makePart({
+			Name = "MesaCap",
+			Size = Vector3.new(rng:NextNumber(130, 230), 6, rng:NextNumber(110, 190)),
+			CFrame = CFrame.new(x, h / 2 + 1, z) * CFrame.Angles(0, -angle + math.rad(rng:NextNumber(-30, 30)), 0),
+			Color = Color3.fromRGB(205, 150, 110),
+			Material = Enum.Material.Sand,
 		}, decor)
 	end
 
@@ -310,8 +317,9 @@ function WorldBuilder.Build()
 		local x, z = math.cos(angle) * r, math.sin(angle) * r
 		local h = rng:NextNumber(90, 230)
 		local w = rng:NextNumber(90, 175)
-		local snow = rng:NextNumber() < 0.35
-		local baseCol = snow and Color3.fromRGB(60, 64, 74) or Color3.fromRGB(30, 32, 40)
+		local snow = rng:NextNumber() < 0.7
+		local shade = rng:NextNumber(0.5, 0.8)
+		local baseCol = Color3.fromRGB(120 * shade, 124 * shade, 140 * shade)
 		local cf = CFrame.new(x, h / 2 - 4, z) * CFrame.Angles(0, -angle + math.rad(rng:NextNumber(-25, 25)), 0)
 		if i % 3 == 0 then
 			makeWedge({
@@ -334,19 +342,41 @@ function WorldBuilder.Build()
 			makePart({
 				Name = "SnowCap",
 				Shape = Enum.PartType.Ball,
-				Size = Vector3.new(w * 0.5, w * 0.4, w * 0.5),
-				CFrame = cf + Vector3.new(0, h * 0.42, 0),
-				Color = Color3.fromRGB(235, 240, 250),
+				Size = Vector3.new(w * 0.7, w * 0.55, w * 0.7),
+				CFrame = cf + Vector3.new(0, h * 0.45, 0),
+				Color = Color3.fromRGB(240, 245, 255),
 				Material = Enum.Material.Snow,
+			}, decor)
+		else
+			makePart({
+				Name = "RockCap",
+				Shape = Enum.PartType.Ball,
+				Size = Vector3.new(w * 0.5, w * 0.4, w * 0.5),
+				CFrame = cf + Vector3.new(0, h * 0.45, 0),
+				Color = Color3.fromRGB(90, 92, 100),
+				Material = Enum.Material.Rock,
 			}, decor)
 		end
 	end
 
 	local bloom = Lighting:FindFirstChildOfClass("BloomEffect") or Instance.new("BloomEffect")
-	bloom.Intensity = 1.2
-	bloom.Size = 24
-	bloom.Threshold = 0.8
+	bloom.Intensity = 0.55
+	bloom.Size = 18
+	bloom.Threshold = 0.85
 	bloom.Parent = Lighting
+
+	local sky = Lighting:FindFirstChildOfClass("Sky") or Instance.new("Sky")
+	sky.StarCount = 0
+	sky.CelestialBodiesShown = true
+	sky.Parent = Lighting
+
+	Lighting.Ambient = Color3.fromRGB(105, 115, 135)
+	Lighting.OutdoorAmbient = Color3.fromRGB(150, 160, 180)
+	Lighting.FogColor = Color3.fromRGB(205, 225, 245)
+	Lighting.FogEnd = 1500
+	Lighting.FogStart = 700
+	Lighting.ClockTime = 14.5
+	Lighting.Brightness = 3
 
 	local cc = Lighting:FindFirstChildOfClass("ColorCorrectionEffect") or Instance.new("ColorCorrectionEffect")
 	cc.Brightness = 0.02

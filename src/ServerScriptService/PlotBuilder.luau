@@ -117,73 +117,60 @@ local function attachBillboard(part, text, widthPx, heightPx, offsetY, bgColor)
 	return bb
 end
 
-local function buildDropper(id, cfg, accent, parent, base, baseY)
+local DROPPER_STYLE = {
+	Dirt = "Rock", Stone = "Rock", Coal = "Void", Iron = "Metal", Silver = "Metal",
+	Gold = "Metal", Diamond = "Crystal", Ruby = "Crystal", Emerald = "Crystal",
+	Uranium = "Void", Voidstone = "Void", Neutronium = "Void", Singularity = "Void",
+	Galaxy = "Void", Quasar = "Void",
+}
+
+local function buildDropper(id, cfg, accent, parent, base, baseY, posX, posZ, yaw)
 	local m = Instance.new("Model")
 	m.Name = "Dropper_" .. id
 	m:SetAttribute("DropperId", id)
 
-	local sideX = (cfg.Side == "Left") and -5.5 or 5.5
 	local h = cfg.Height
-	local machine = cfg.Machine
-	local bodyW = machine and 3.5 or 2
+	local style = DROPPER_STYLE[id] or "Rock"
+	local itemCol = cfg.ItemColor
+	local root = base * CFrame.new(posX, baseY + h / 2, posZ) * CFrame.Angles(0, yaw or 0, 0)
 
-	makePart({
-		Name = "Column",
-		Size = Vector3.new(bodyW, h, bodyW),
-		CFrame = base * CFrame.new(sideX, baseY + h / 2, cfg.DropZ),
-		Color = machine and Color3.fromRGB(72, 62, 96) or Color3.fromRGB(105, 110, 118),
-		Material = Enum.Material.Metal,
-	}, m)
-
-	if machine then
-		makePart({
-			Name = "Tank",
-			Shape = Enum.PartType.Cylinder,
-			Size = Vector3.new(3, 2.4, 2.4),
-			CFrame = base * CFrame.new(sideX + (cfg.Side == "Left" and 2.4 or -2.4), baseY + h * 0.35, cfg.DropZ) * CFrame.Angles(0, 0, math.rad(90)),
-			Color = Color3.fromRGB(130, 110, 180),
-			Material = Enum.Material.Metal,
-		}, m)
-
-		makePart({
-			Name = "Pipe",
-			Shape = Enum.PartType.Cylinder,
-			Size = Vector3.new(h * 0.6, 0.6, 0.6),
-			CFrame = base * CFrame.new(sideX + (cfg.Side == "Left" and 1.2 or -1.2), baseY + h * 0.6, cfg.DropZ) * CFrame.Angles(0, 0, math.rad(90)),
-			Color = cfg.ItemColor,
-			Material = Enum.Material.Neon,
-		}, m)
+	local function part(props)
+		return makePart(props, m)
 	end
 
-	makePart({
-		Name = "Arm",
-		Size = Vector3.new(math.abs(sideX) + 1, 1.2, 1.6),
-		CFrame = base * CFrame.new(sideX / 2, baseY + h - 0.5, cfg.DropZ),
-		Color = machine and Color3.fromRGB(95, 85, 125) or Color3.fromRGB(130, 135, 145),
-		Material = Enum.Material.Metal,
-	}, m)
+	if style == "Crystal" then
+		part({ Name = "Body", Shape = Enum.PartType.Cylinder, Size = Vector3.new(2.6, h, 2.6), CFrame = root * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(38, 44, 56), Material = Enum.Material.Slate })
+		part({ Name = "Crystal", Shape = Enum.PartType.Ball, Size = Vector3.new(2.4, h * 0.7, 2.4), CFrame = root * CFrame.new(0, h * 0.12, 0), Color = itemCol, Material = Enum.Material.Neon })
+		for a = 0, 3 do
+			part({ Name = "Facet", Size = Vector3.new(0.35, h * 0.6, 1.8), CFrame = root * CFrame.Angles(0, math.rad(a * 90), 0) * CFrame.new(0, h * 0.12, 1.0), Color = itemCol, Material = Enum.Material.Neon, Transparency = 0.35 })
+		end
+	elseif style == "Metal" then
+		part({ Name = "Body", Size = Vector3.new(3.0, h, 3.0), CFrame = root, Color = Color3.fromRGB(66, 70, 80), Material = Enum.Material.Metal })
+		part({ Name = "Top", Size = Vector3.new(2.8, 0.9, 2.8), CFrame = root * CFrame.new(0, h / 2, 0), Color = itemCol, Material = Enum.Material.Neon })
+		for a = 0, 3 do
+			part({ Name = "Pipe", Shape = Enum.PartType.Cylinder, Size = Vector3.new(h * 0.5, 0.5, 0.5), CFrame = root * CFrame.Angles(0, math.rad(a * 90), math.rad(90)) * CFrame.new(0, 0, 1.8), Color = itemCol, Material = Enum.Material.Neon })
+		end
+	elseif style == "Void" then
+		part({ Name = "Body", Size = Vector3.new(2.8, h, 2.8), CFrame = root, Color = Color3.fromRGB(26, 20, 38), Material = Enum.Material.Metal })
+		part({ Name = "Core", Shape = Enum.PartType.Ball, Size = Vector3.new(1.9, 1.9, 1.9), CFrame = root * CFrame.new(0, h * 0.18, 0), Color = itemCol, Material = Enum.Material.Neon })
+		for a = 0, 3 do
+			part({ Name = "Vein", Size = Vector3.new(0.3, h * 0.7, 0.3), CFrame = root * CFrame.Angles(0, math.rad(a * 90 + 45), 0) * CFrame.new(0, 0, 1.4), Color = itemCol, Material = Enum.Material.Neon })
+		end
+	else
+		part({ Name = "Body", Shape = Enum.PartType.Ball, Size = Vector3.new(3.2, h, 3.2), CFrame = root, Color = Color3.fromRGB(90, 92, 98), Material = Enum.Material.Slate })
+		part({ Name = "Crack", Size = Vector3.new(0.6, h * 0.5, 0.6), CFrame = root * CFrame.new(0, h * 0.2, 1.4), Color = itemCol, Material = Enum.Material.Neon })
+	end
 
-	local nozzle = makePart({
-		Name = "Nozzle",
-		Size = Vector3.new(1.8, 1.2, 1.8),
-		CFrame = base * CFrame.new(0, baseY + h - 1.1, cfg.DropZ),
-		Color = cfg.ItemColor,
-		Material = Enum.Material.Neon,
-	}, m)
+	part({ Name = "Arm", Size = Vector3.new(math.abs(posX) + 1, 1.0, 1.2), CFrame = base * CFrame.new(posX / 2, baseY + h - 0.5, posZ), Color = Color3.fromRGB(80, 84, 94), Material = Enum.Material.Metal })
 
+	local nozzle = part({ Name = "Nozzle", Size = Vector3.new(1.8, 1.2, 1.8), CFrame = base * CFrame.new(0, baseY + h - 1.1, posZ), Color = itemCol, Material = Enum.Material.Neon })
 	local nozzleLight = Instance.new("PointLight")
-	nozzleLight.Color = cfg.ItemColor
+	nozzleLight.Color = itemCol
 	nozzleLight.Range = 10
 	nozzleLight.Brightness = 1.5
 	nozzleLight.Parent = nozzle
 
-	makePart({
-		Name = "SpawnPoint",
-		Size = Vector3.new(0.4, 0.4, 0.4),
-		CFrame = base * CFrame.new(0, baseY + h - 1.8, cfg.DropZ),
-		Transparency = 1,
-		CanCollide = false,
-	}, m)
+	part({ Name = "SpawnPoint", Size = Vector3.new(0.4, 0.4, 0.4), CFrame = base * CFrame.new(0, baseY + h - 1.8, posZ), Transparency = 1, CanCollide = false })
 
 	m.Parent = parent
 	return m
@@ -192,7 +179,7 @@ end
 local function buildWalls(accent, base, parent)
 	local h = L.WallHeight
 	local t = 1.5
-	local wallColor = Color3.fromRGB(55, 58, 66)
+	local wallColor = Color3.fromRGB(48, 50, 58)
 
 	local function wallModel(name)
 		local wm = Instance.new("Model")
@@ -202,25 +189,64 @@ local function buildWalls(accent, base, parent)
 	end
 
 	local back = wallModel("Back")
-	makePart({ Name = "Wall", Size = Vector3.new(FX, h, t), CFrame = base * CFrame.new(0, h / 2, FZ / 2), Color = wallColor, Material = Enum.Material.Metal }, back)
-	makePart({ Name = "Trim", Size = Vector3.new(FX, 0.4, t + 0.2), CFrame = base * CFrame.new(0, h + 0.2, FZ / 2), Color = accent, Material = Enum.Material.Neon }, back)
+	makePart({ Name = "Wall", Size = Vector3.new(FX, h, t), CFrame = base * CFrame.new(0, h / 2, FZ / 2), Color = wallColor, Material = Enum.Material.Slate }, back)
+	makePart({ Name = "Trim", Size = Vector3.new(FX, 0.5, t + 0.2), CFrame = base * CFrame.new(0, h + 0.2, FZ / 2), Color = accent, Material = Enum.Material.Metal }, back)
+	for _, sx in ipairs({ -FX / 2, FX / 2 }) do
+		local tower = makePart({ Name = "Tower", Size = Vector3.new(2.5, h + 4, 2.5), CFrame = base * CFrame.new(sx, (h + 4) / 2, FZ / 2), Color = Color3.fromRGB(40, 42, 50), Material = Enum.Material.Slate }, back)
+		makePart({ Name = "Crystal", Shape = Enum.PartType.Ball, Size = Vector3.new(2.2, 2.2, 2.2), CFrame = base * CFrame.new(sx, h + 4, FZ / 2), Color = accent, Material = Enum.Material.Neon }, back)
+		local gl = Instance.new("PointLight")
+		gl.Color = accent
+		gl.Range = 14
+		gl.Brightness = 1.5
+		gl.Parent = tower
+	end
 
 	local left = wallModel("Left")
-	makePart({ Name = "Wall", Size = Vector3.new(t, h, FZ), CFrame = base * CFrame.new(-FX / 2, h / 2, 0), Color = wallColor, Material = Enum.Material.Metal }, left)
-	makePart({ Name = "Trim", Size = Vector3.new(t + 0.2, 0.4, FZ), CFrame = base * CFrame.new(-FX / 2, h + 0.2, 0), Color = accent, Material = Enum.Material.Neon }, left)
+	makePart({ Name = "Wall", Size = Vector3.new(t, h, FZ), CFrame = base * CFrame.new(-FX / 2, h / 2, 0), Color = wallColor, Material = Enum.Material.Slate }, left)
+	makePart({ Name = "Trim", Size = Vector3.new(t + 0.2, 0.5, FZ), CFrame = base * CFrame.new(-FX / 2, h + 0.2, 0), Color = accent, Material = Enum.Material.Metal }, left)
 
 	local right = wallModel("Right")
-	makePart({ Name = "Wall", Size = Vector3.new(t, h, FZ), CFrame = base * CFrame.new(FX / 2, h / 2, 0), Color = wallColor, Material = Enum.Material.Metal }, right)
-	makePart({ Name = "Trim", Size = Vector3.new(t + 0.2, 0.4, FZ), CFrame = base * CFrame.new(FX / 2, h + 0.2, 0), Color = accent, Material = Enum.Material.Neon }, right)
+	makePart({ Name = "Wall", Size = Vector3.new(t, h, FZ), CFrame = base * CFrame.new(FX / 2, h / 2, 0), Color = wallColor, Material = Enum.Material.Slate }, right)
+	makePart({ Name = "Trim", Size = Vector3.new(t + 0.2, 0.5, FZ), CFrame = base * CFrame.new(FX / 2, h + 0.2, 0), Color = accent, Material = Enum.Material.Metal }, right)
 
 	local front = wallModel("Front")
 	local segW = (FX - 10) / 2
-	makePart({ Name = "SegL", Size = Vector3.new(segW, h, t), CFrame = base * CFrame.new(-(5 + segW / 2), h / 2, -FZ / 2), Color = wallColor, Material = Enum.Material.Metal }, front)
-	makePart({ Name = "SegR", Size = Vector3.new(segW, h, t), CFrame = base * CFrame.new(5 + segW / 2, h / 2, -FZ / 2), Color = wallColor, Material = Enum.Material.Metal }, front)
-	makePart({ Name = "PostL", Size = Vector3.new(2, h, t + 0.5), CFrame = base * CFrame.new(-5, h / 2, -FZ / 2), Color = accent, Material = Enum.Material.Neon }, front)
-	makePart({ Name = "PostR", Size = Vector3.new(2, h, t + 0.5), CFrame = base * CFrame.new(5, h / 2, -FZ / 2), Color = accent, Material = Enum.Material.Neon }, front)
-	makePart({ Name = "Lintel", Size = Vector3.new(12, 3, t), CFrame = base * CFrame.new(0, h - 1.5, -FZ / 2), Color = wallColor, Material = Enum.Material.Metal }, front)
-	makePart({ Name = "Trim", Size = Vector3.new(FX, 0.4, t + 0.2), CFrame = base * CFrame.new(0, h + 0.2, -FZ / 2), Color = accent, Material = Enum.Material.Neon }, front)
+	makePart({ Name = "SegL", Size = Vector3.new(segW, h, t), CFrame = base * CFrame.new(-(5 + segW / 2), h / 2, -FZ / 2), Color = wallColor, Material = Enum.Material.Slate }, front)
+	makePart({ Name = "SegR", Size = Vector3.new(segW, h, t), CFrame = base * CFrame.new(5 + segW / 2, h / 2, -FZ / 2), Color = wallColor, Material = Enum.Material.Slate }, front)
+	makePart({ Name = "PostL", Size = Vector3.new(2, h, t + 0.5), CFrame = base * CFrame.new(-5, h / 2, -FZ / 2), Color = Color3.fromRGB(40, 42, 50), Material = Enum.Material.Slate }, front)
+	makePart({ Name = "PostR", Size = Vector3.new(2, h, t + 0.5), CFrame = base * CFrame.new(5, h / 2, -FZ / 2), Color = Color3.fromRGB(40, 42, 50), Material = Enum.Material.Slate }, front)
+	makePart({ Name = "Lintel", Size = Vector3.new(12, 3, t), CFrame = base * CFrame.new(0, h - 1.5, -FZ / 2), Color = wallColor, Material = Enum.Material.Slate }, front)
+	makePart({ Name = "Trim", Size = Vector3.new(FX, 0.5, t + 0.2), CFrame = base * CFrame.new(0, h + 0.2, -FZ / 2), Color = accent, Material = Enum.Material.Metal }, front)
+end
+
+local function buildDecor(model, accent, base)
+	local d = Instance.new("Model")
+	d.Name = "ThemeDecor"
+	d:SetAttribute("Decor", true)
+	d.Parent = model
+
+	local cols = { accent, Color3.fromRGB(120, 200, 255), Color3.fromRGB(200, 140, 255), Color3.fromRGB(255, 200, 90) }
+	local corners = { { -FX / 2 + 7, -FZ / 2 + 7 }, { FX / 2 - 7, -FZ / 2 + 7 }, { -FX / 2 + 7, FZ / 2 - 7 }, { FX / 2 - 7, FZ / 2 - 7 } }
+	for i, c in ipairs(corners) do
+		local col = cols[(i % #cols) + 1]
+		for k = 1, 3 do
+			local ang = (k / 3) * math.pi * 2 + i
+			local r = 2.6
+			local x = c[1] + math.cos(ang) * r
+			local z = c[2] + math.sin(ang) * r
+			makePart({ Name = "Crystal", Shape = Enum.PartType.Ball, Size = Vector3.new(1.3, 3 + k, 1.3), CFrame = base * CFrame.new(x, 1.5 + (3 + k) / 2, z), Color = col, Material = Enum.Material.Neon, CanCollide = false }, d)
+		end
+	end
+
+	makePart({ Name = "Obelisk", Size = Vector3.new(2, 6, 2), CFrame = base * CFrame.new(0, 3, 27), Color = Color3.fromRGB(40, 42, 50), Material = Enum.Material.Slate }, d)
+	local orb = makePart({ Name = "Core", Shape = Enum.PartType.Ball, Size = Vector3.new(3, 3, 3), CFrame = base * CFrame.new(0, 7, 27), Color = accent, Material = Enum.Material.Neon, CanCollide = false }, d)
+	local gl = Instance.new("PointLight")
+	gl.Color = accent
+	gl.Range = 22
+	gl.Brightness = 2
+	gl.Parent = orb
+	makeEmitter(orb, ColorSequence.new(accent), 0.8, 12, 0.6, "DecorBurst")
+	return d
 end
 
 local function buildLaser(base, parent)
@@ -465,7 +491,7 @@ local function buildButtons(folder, defs, cols, rows, yBase, accent, base)
 
 		attachBillboard(btn, def.Name .. "\n$" .. comma(def.Cost), 130, 44, 2.4, Color3.fromRGB(22, 26, 36))
 		makeEmitter(btn, RAINBOW, 0.9, 16, 0.9, "BuyBurst")
-		attachSound(btn, "BuySound", "rbxasset://sounds/electronicpingshort.wav", 1.1)
+		attachSound(btn, "BuySound", "rbxassetid://101396758527961", 1.0)
 
 		local light = Instance.new("PointLight")
 		light.Color = accent
@@ -676,16 +702,25 @@ function PlotBuilder.Build(index, origin, yaw)
 	buildStairsAndFloor3(accent, base, beltDir, locked)
 	buildLaser(base, locked)
 
-	for id, cfg in pairs(Config.Droppers) do
-		buildDropper(id, cfg, accent, locked, base, 0)
-	end
-	for id, cfg in pairs(Config.Floor2Droppers) do
-		buildDropper(id, cfg, accent, locked, base, 14)
-	end
-	if Config.Floor3Droppers then
-		for id, cfg in pairs(Config.Floor3Droppers) do
-			buildDropper(id, cfg, accent, locked, base, 24)
+	local function placeDroppers(tbl, baseY)
+		local list = {}
+		for id, cfg in pairs(tbl) do
+			table.insert(list, { id = id, cfg = cfg })
 		end
+		table.sort(list, function(a, b) return (a.cfg.DropZ or 0) < (b.cfg.DropZ or 0) end)
+		local n = #list
+		for i, d in ipairs(list) do
+			local sign = (d.cfg.Side == "Left") and -1 or 1
+			local tt = (i - 1) / math.max(1, n - 1)
+			local x = sign * (4 + 4 * math.sin(tt * math.pi))
+			local yaw = math.rad(sign * 28)
+			buildDropper(d.id, d.cfg, accent, locked, base, baseY, x, d.cfg.DropZ, yaw)
+		end
+	end
+	placeDroppers(Config.Droppers, 0)
+	placeDroppers(Config.Floor2Droppers, 14)
+	if Config.Floor3Droppers then
+		placeDroppers(Config.Floor3Droppers, 24)
 	end
 
 	buildSign("CompleteSign1", "TYCOON COMPLETE!", base * CFrame.new(0, 10, FZ / 2 - 1.75), locked)
@@ -717,6 +752,7 @@ function PlotBuilder.Build(index, origin, yaw)
 	buildButtons(buttons3, floor3Defs, L.Floor3ButtonCols, L.Floor3ButtonRows, 24.35, accent, base)
 
 	buildMonument(model)
+	buildDecor(model, accent, base)
 
 	return model
 end

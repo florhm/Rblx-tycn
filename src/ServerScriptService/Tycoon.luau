@@ -256,14 +256,6 @@ function Tycoon:_collect(hit, collectorPart)
 	if burst then
 		burst:Emit(math.clamp(self._comboCount * 2, 4, 20))
 	end
-	local sound = collectorPart:FindFirstChild("SellSound")
-	if sound then
-		sound.PlaybackSpeed = math.min(0.95 + (self._comboCount * 0.05), 1.6)
-		sound:Play()
-	end
-	if self.Owner and (paid >= 300 or self._comboCount >= 4) then
-		self:_fireJuice(self.Owner, "Shake", math.clamp(self._comboCount * 0.3 + paid/1000, 0.5, 1.5))
-	end
 end
 
 function Tycoon:_sellPopup(collectorPart, amount, color, combo)
@@ -351,17 +343,54 @@ function Tycoon:_updateHub()
 	end
 end
 
-function Tycoon:_spawnCoinShower(hubPart)
-	for i = 1, 12 do
-		local coin = Instance.new("Part")
-		coin.Shape = Enum.PartType.Cylinder
-		coin.Size = Vector3.new(0.2, 0.8, 0.8)
-		coin.Color = Color3.fromRGB(255, 215, 60)
-		coin.Material = Enum.Material.Neon
-		coin.CFrame = hubPart.CFrame * CFrame.new(math.random(-2, 2), 2, math.random(-2, 2)) * CFrame.Angles(0, 0, math.rad(90))
-		coin.Velocity = Vector3.new(math.random(-15, 15), math.random(20, 35), math.random(-15, 15))
-		coin.Parent = workspace
-		Debris:AddItem(coin, 1.5)
+function Tycoon:_spawnMoneyBills(hubPart, amount, player)
+	local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+	if not hrp then
+		return
+	end
+	local count = math.clamp(math.floor(amount / 250) + 8, 8, 40)
+	local hubPos = hubPart.Position
+	local groundY = 1.4
+	for i = 1, count do
+		local bill = Instance.new("Part")
+		bill.Name = "MoneyBill"
+		bill.Size = Vector3.new(1.7, 0.12, 1.0)
+		bill.Color = Color3.fromRGB(95, 225, 130)
+		bill.Material = Enum.Material.Neon
+		bill.Anchored = true
+		bill.CanCollide = false
+		local spin = math.random(-4, 4)
+		local scatter = Vector3.new((math.random() * 2 - 1) * 8, 0, (math.random() * 2 - 1) * 8)
+		local startPos = hubPos + Vector3.new(math.random(-2, 2), 3, math.random(-2, 2))
+		local apex = startPos + Vector3.new(scatter.X * 0.5, 4.5, scatter.Z * 0.5)
+		local groundPos = Vector3.new(hubPos.X + scatter.X, groundY, hubPos.Z + scatter.Z)
+		bill.CFrame = CFrame.new(startPos)
+		bill.Parent = workspace
+		Debris:AddItem(bill, 3)
+		task.spawn(function()
+			local t0 = os.clock()
+			while bill.Parent do
+				local t = os.clock() - t0
+				local cf
+				if t < 0.35 then
+					local k = t / 0.35
+					cf = CFrame.new(startPos:Lerp(apex, k))
+				elseif t < 0.95 then
+					local k = (t - 0.35) / 0.6
+					cf = CFrame.new(apex:Lerp(groundPos, k))
+				else
+					local target = hrp.Position + Vector3.new(0, 1.6, 0)
+					local np = bill.Position:Lerp(target, math.min(1, (t - 0.95) * 3.2))
+					cf = CFrame.new(np)
+					if (np - target).Magnitude < 1.6 then
+						bill:Destroy()
+						return
+					end
+				end
+				bill.CFrame = cf * CFrame.Angles(t * spin, t * spin * 0.5, 0)
+				task.wait(0.02)
+			end
+		end)
 	end
 end
 
@@ -381,8 +410,8 @@ function Tycoon:_collectHub()
 	self.PendingCash = 0
 	self:_updateHub()
 	cash.Value += amount
-	self:_sellPopup(self.Model.CashHub, amount, Color3.fromRGB(255, 220, 80))
-	self:_spawnCoinShower(self.Model.CashHub)
+	self:_sellPopup(self.Model.CashHub, amount, Color3.fromRGB(120, 255, 165))
+	self:_spawnMoneyBills(self.Model.CashHub, amount, player)
 
 	local burst = self.Model.CashHub:FindFirstChild("CashBurst")
 	if burst then
@@ -392,12 +421,8 @@ function Tycoon:_collectHub()
 	if sound then
 		sound:Play()
 	end
-	self:_fireJuice(player, "Shake", math.clamp(amount/2000, 0.5, 2))
 	if amount >= 5000 then
 		self:_fireJuice(player, "Flash", 1)
-	end
-	if amount >= 2000 then
-		self:_fireJuice(player, "FOV", 1)
 	end
 end
 
